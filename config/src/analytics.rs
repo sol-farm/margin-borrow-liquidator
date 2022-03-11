@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 /// provides configuration options for the analytics backend
 pub struct Analytics {
+    /// the maximum number of concurrent obligation refreshes
+    pub obligation_refresh_concurrency: u64,
     /// information for scraping pricing related data
     pub price_feeds: Vec<PriceFeed>,
     /// how often we start the analytics scraper work loop

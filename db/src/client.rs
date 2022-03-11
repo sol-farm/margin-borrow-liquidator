@@ -5,12 +5,10 @@ use crate::models::{
     Obligation, PriceFeed
 };
 use crate::schema::*;
-use ::r2d2::Pool;
 use anyhow::{anyhow, Result};
 use arrform::{arrform, ArrForm};
 use chrono::{prelude::*, Duration};
-use diesel::r2d2;
-use diesel::r2d2::ConnectionManager;
+
 use diesel::PgConnection;
 use diesel::*;
 use diesel_derives_traits::{Model, NewModel};

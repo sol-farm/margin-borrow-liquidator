@@ -8,6 +8,7 @@ pub mod programs;
 pub mod rpcs;
 pub mod telemetry;
 pub mod utils;
+pub mod liquidator;
 
 use telemetry::Telemetry;
 
