@@ -1,6 +1,7 @@
 [package]
-name = "analytics"
+name = "scrapers"
 version = "0.1.0"
+authors = ["bonedaddy <boned4ddy@protonmail.com>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -11,32 +12,25 @@ crossbeam = "0.8"
 crossbeam-utils = "0.8"
 crossbeam-channel = "0.5"
 db = { path = "../db" }
-diesel = { version = "1.4.7", features = ["postgres", "chrono", "r2d2"] }
+diesel = "1.4.7"
 solana-account-decoder = "1.9.1"
 serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.8"
-thiserror = "1.0.30"
+thiserror = "1.0.25"
 anyhow = "1.0.41"
 simplelog = "0.10.0"
 log = "0.4.14"
 serde_json = "1.0.64"
 solana-sdk = "1.9.1"
 solana-client = "1.9.1"
+anchor-lang = "0.22.0"
 anchor-client = "0.22.0"
 chrono = "0.4.19"
 tokio = { version = "1.8.0", features = ["rt-multi-thread"] }
-axum = {version = "0.3.0", features = ["headers", "http2"]}
-hyper = { version = "0.14", features = ["full"] }
-tower-http = {version = "0.1.1", features = ["full", "trace"]}
-tower = {version = "0.4", features = ["full"]}
-validator = { version = "0.14", features = ["derive"] }
-axum-debug = "0.1.0"
-tracing = "0.1"
-tracing-subscriber = "0.2"
-channels = { path = "../channels"}
-dashmap = "5.1.0"
+crossbeam-queue = "0.3.2"
+spl-token = "3.2.0"
+spl-associated-token-account = "1.0.3"
 arrform = {git = "https://github.com/sol-farm/arrform.git", rev = "fdbb0cfe18eadbff99cc8cd63f1b5a43df70e665"}
-reqwest = { version = "0.11", features = ["json", "blocking"]}
-csv = "1.1.6"
-into_query = {version = "0.2.3", features = ["postgres"]}
-scrapers = {path = "../scrapers"}
+bytemuck = "1.7.2"
+tulipv2-sdk-common = "0.9.0"
+static-pubkey = "1.0.2"

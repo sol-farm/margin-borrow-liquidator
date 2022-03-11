@@ -6,6 +6,7 @@ members = [
     "config",
     "db",
     "rpc_utils",
+    "scrapers"
 ]
 [profile.release]
 lto = "fat"

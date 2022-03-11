@@ -97,6 +97,7 @@ dependencies = [
  "into_query",
  "log 0.4.14",
  "reqwest",
+ "scrapers",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -270,6 +271,18 @@ dependencies = [
  "bytemuck",
  "solana-program",
  "thiserror",
+]
+
+[[package]]
+name = "anchor-spl"
+version = "0.22.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bcdf03d76450451f6c587098fa0d9775dc7eabf9173c89bd1bb17dd72b49e748"
+dependencies = [
+ "anchor-lang",
+ "solana-program",
+ "spl-associated-token-account",
+ "spl-token",
 ]
 
 [[package]]
@@ -3393,6 +3406,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
 
 [[package]]
+name = "rustc-hex"
+version = "2.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3e75f6a532d0fd9f7f13144f392b6ad56a32696bfcd9c78f797f16bbb6f072d6"
+
+[[package]]
 name = "rustc_version"
 version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3488,6 +3507,39 @@ name = "scopeguard"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
+
+[[package]]
+name = "scrapers"
+version = "0.1.0"
+dependencies = [
+ "anchor-client",
+ "anchor-lang",
+ "anyhow",
+ "arrform",
+ "bytemuck",
+ "chrono",
+ "config",
+ "crossbeam",
+ "crossbeam-channel",
+ "crossbeam-queue",
+ "crossbeam-utils",
+ "db",
+ "diesel",
+ "log 0.4.14",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "simplelog",
+ "solana-account-decoder",
+ "solana-client",
+ "solana-sdk",
+ "spl-associated-token-account",
+ "spl-token",
+ "static-pubkey",
+ "thiserror",
+ "tokio",
+ "tulipv2-sdk-common",
+]
 
 [[package]]
 name = "sct"
@@ -4897,6 +4949,40 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "59547bce71d9c38b83d9c0e92b6066c4253371f15005def0c30d9657f50c7642"
 
 [[package]]
+name = "tulip-arrform"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b6f4c70c8fe82613e0a32b00a3eab2557ec5dd110bddf471ace19de8fd4577d0"
+
+[[package]]
+name = "tulipv2-sdk-common"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f586a8486701a6ddd2a8c6d6ef9d6cd1ce53cfb4529aa8cde322cb0385ca461b"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "num-derive",
+ "num-traits",
+ "spl-token",
+ "static-pubkey",
+ "thiserror",
+ "tulip-arrform",
+ "tulipv2-sdk-farms",
+ "uint",
+]
+
+[[package]]
+name = "tulipv2-sdk-farms"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "59bee7a14b57271aca65052cc6c439826a022ee76479733712a4d3b719e5586a"
+dependencies = [
+ "anchor-lang",
+ "tulip-arrform",
+]
+
+[[package]]
 name = "tungstenite"
 version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4935,6 +5021,18 @@ name = "ucd-trie"
 version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56dee185309b50d1f11bfedef0fe6d036842e3fb77413abef29f8f8d1c5d4c1c"
+
+[[package]]
+name = "uint"
+version = "0.8.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9db035e67dfaf7edd9aebfe8676afcd63eed53c8a4044fed514c8cccf1835177"
+dependencies = [
+ "byteorder",
+ "crunchy",
+ "rustc-hex",
+ "static_assertions",
+]
 
 [[package]]
 name = "unicase"
