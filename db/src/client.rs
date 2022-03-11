@@ -1,5 +1,5 @@
 use crate::filters::{
-    FindObligation, FindPriceFeed, PriceFeedMatcher, ObligationMatcher,
+    FindObligation, FindPriceFeed, PriceFeedMatcher, ObligationMatcher, LtvFilter,
 };
 use crate::models::{
     Obligation, PriceFeed
@@ -26,7 +26,7 @@ use std::sync::Arc;
 pub struct NewObligation {
     pub ltv: f64,
     pub account: String,
-    pub account_data: Option<Vec<u8>>,
+    pub account_data: Vec<u8>,
     pub scraped_at: DateTime<Utc>,
 }
 
@@ -99,6 +99,84 @@ pub fn delete_price_feed(
     }
     Ok(())
 }
+
+/// puts an obligation account update into the database, updating
+/// the record if it already exists, creating a new one if it does not
+pub fn put_obligation(
+    conn: &PgConnection,
+    ltv: f64,
+    account: &str,
+    account_data: Vec<u8>,
+    scraped_at: DateTime<Utc>,
+) -> Result<()> {
+    conn.transaction(|| {
+        let mut results = get_obligation(
+            conn,
+            &ObligationMatcher::Account(vec![account.to_string()]),
+            None,
+        )?;
+        if results.is_empty() {
+            // no record, create it
+            NewObligation {
+                ltv,
+                account: account.to_string(),
+                account_data,
+                scraped_at,
+            }.save(conn)?;
+        } else {
+            let mut obligation = std::mem::take(&mut results[0]);
+            obligation.account_data = account_data;
+            obligation.ltv = ltv;
+            obligation.save(conn)?;
+        }
+        Ok(())
+    })
+}
+
+/// returns any obligations matched by the given matcher 
+pub fn get_obligation(
+    conn: &PgConnection,
+    matcher: &ObligationMatcher,
+    ltv_filter: Option<LtvFilter>,
+) -> QueryResult<Vec<Obligation>> {
+    use crate::schema::obligations::dsl::*;
+    let query = matcher
+    .to_filter()
+    .into_query();
+    let query = if let Some(ltv_filter) = ltv_filter {
+        match ltv_filter {
+            LtvFilter::GE(ltv_val) => {
+                query.filter(ltv.ge(ltv_val))
+            },
+            LtvFilter::LE(ltv_val) => {
+                query.filter(ltv.le(ltv_val))
+            },
+            LtvFilter::GT(ltv_val) => {
+                query.filter(ltv.gt(ltv_val))
+            },
+            LtvFilter::LT(ltv_val) => {
+                query.filter(ltv.lt(ltv_val))
+            },
+        }
+    } else {
+        query
+    };
+    query.get_results::<Obligation>(conn)
+}
+
+/// deletes any price feeds matched by the given matcher
+pub fn delete_obligation(
+    conn: &PgConnection,
+    matcher: &ObligationMatcher,
+    ltv_filter: Option<LtvFilter>,
+) -> Result<()> {
+    let mut results = get_obligation(conn, matcher, ltv_filter)?;
+    for result in &mut results {
+        std::mem::take(result).destroy(conn)?;
+    }
+    Ok(())
+}
+
 
 #[cfg(test)]
 mod test {
@@ -290,5 +368,312 @@ mod test {
             assert_eq!(results[0].price, 420.42069);
         }
         cleanup();
+    }
+    #[test]
+    #[allow(unused_must_use)]
+    fn test_obligation() {
+        use crate::test_utils::TestDb;
+        std::env::set_var(
+            "DATABASE_URL",
+            "postgres://postgres:password123@localhost/liquidator",
+        );
+        let test_db = TestDb::new();
+        let conn = test_db.conn();
+        crate::run_migrations(&conn);
+
+        let scraped_at_one = Utc::now();
+
+        // give time for database to do its thing
+        std::thread::sleep(std::time::Duration::from_secs(2));
+        let cleanup = || {
+            delete_obligation(&conn, &ObligationMatcher::All, None);
+        };
+        cleanup();
+        // give time for database to do its thing
+        std::thread::sleep(std::time::Duration::from_secs(2));
+
+        let scraped_at_two = Utc::now();
+
+        let ltv_one = 420.69;
+        let account_one = "account-1";
+        let account_data_one = "420".as_bytes().to_vec();
+
+        let ltv_two = 69.420;
+        let account_two = "account-2";
+        let account_data_two = "69".as_bytes().to_vec();
+
+        // we should have no results 
+        let results = get_obligation(&conn, &ObligationMatcher::All, None).unwrap();
+        assert_eq!(results.len(), 0);
+        let results = get_obligation(&conn, &ObligationMatcher::Account(vec![account_one.to_string()]), None).unwrap();
+        assert_eq!(results.len(), 0);
+        
+        // test first update to an account, creating the record
+        {
+            put_obligation(
+                &conn,
+                ltv_one,
+                account_one,
+                account_data_one.clone(),
+                scraped_at_one,
+            ).unwrap();
+
+            let results = get_obligation(&conn, &ObligationMatcher::All, None).unwrap();
+            assert_eq!(results.len(), 1);
+            let results = get_obligation(&conn, &ObligationMatcher::Account(vec![account_one.to_string()]), None).unwrap();
+            assert_eq!(results.len(), 1);
+            assert_eq!(results[0].ltv, ltv_one);
+            assert_eq!(results[0].account.to_string(), account_one.to_string());
+            assert_eq!(results[0].account_data, account_data_one);
+            assert_eq!(results[0].scraped_at.hour(), scraped_at_one.hour());
+            assert_eq!(results[0].scraped_at.minute(), scraped_at_one.minute());
+            assert_eq!(results[0].scraped_at.second(), scraped_at_one.second());
+        }
+        // test second update to an account, updating the record
+        {
+            let new_account_data = "696969".as_bytes().to_vec();
+            put_obligation(
+                &conn,
+                ltv_one,
+                account_one,
+                new_account_data.clone(),
+                scraped_at_one,
+            ).unwrap();
+
+            let results = get_obligation(&conn, &ObligationMatcher::All, None).unwrap();
+            assert_eq!(results.len(), 1);
+            let results = get_obligation(&conn, &ObligationMatcher::Account(vec![account_one.to_string()]), None).unwrap();
+            assert_eq!(results.len(), 1);
+            assert_eq!(results[0].ltv, ltv_one);
+            assert_eq!(results[0].account.to_string(), account_one.to_string());
+            assert_eq!(results[0].account_data, new_account_data);
+            assert_eq!(results[0].scraped_at.hour(), scraped_at_one.hour());
+            assert_eq!(results[0].scraped_at.minute(), scraped_at_one.minute());
+            assert_eq!(results[0].scraped_at.second(), scraped_at_one.second());
+        }
+        // test a new obligation
+        {
+            put_obligation(
+                &conn,
+                ltv_two,
+                account_two,
+                account_data_two.clone(),
+                scraped_at_two,
+            ).unwrap();
+
+            let results = get_obligation(&conn, &ObligationMatcher::All, None).unwrap();
+            assert_eq!(results.len(), 2);
+            let results = get_obligation(&conn, &ObligationMatcher::Account(vec![account_two.to_string()]), None).unwrap();
+            assert_eq!(results.len(), 1);
+            assert_eq!(results[0].ltv, ltv_two);
+            assert_eq!(results[0].account.to_string(), account_two.to_string());
+            assert_eq!(results[0].account_data, account_data_two);
+            assert_eq!(results[0].scraped_at.hour(), scraped_at_two.hour());
+            assert_eq!(results[0].scraped_at.minute(), scraped_at_two.minute());
+            assert_eq!(results[0].scraped_at.second(), scraped_at_two.second());
+        }
+        // test updating a new obligation
+        {
+            let new_account_data_two = "496929123123".as_bytes().to_vec();
+            put_obligation(
+                &conn,
+                ltv_two,
+                account_two,
+                new_account_data_two.clone(),
+                scraped_at_two,
+            ).unwrap();
+
+            let results = get_obligation(&conn, &ObligationMatcher::All, None).unwrap();
+            assert_eq!(results.len(), 2);
+            let results = get_obligation(&conn, &ObligationMatcher::Account(vec![account_two.to_string()]), None).unwrap();
+            assert_eq!(results.len(), 1);
+            assert_eq!(results[0].ltv, ltv_two);
+            assert_eq!(results[0].account.to_string(), account_two.to_string());
+            assert_eq!(results[0].account_data, new_account_data_two);
+            assert_eq!(results[0].scraped_at.hour(), scraped_at_two.hour());
+            assert_eq!(results[0].scraped_at.minute(), scraped_at_two.minute());
+            assert_eq!(results[0].scraped_at.second(), scraped_at_two.second());
+        }
+    }
+    #[test]
+    #[allow(unused_must_use)]
+    fn test_obligation_ltv_filter() {
+        use crate::test_utils::TestDb;
+        std::env::set_var(
+            "DATABASE_URL",
+            "postgres://postgres:password123@localhost/liquidator",
+        );
+        let test_db = TestDb::new();
+        let conn = test_db.conn();
+        crate::run_migrations(&conn);
+
+        let scraped_at_one = Utc::now();
+
+        // give time for database to do its thing
+        std::thread::sleep(std::time::Duration::from_secs(2));
+        let cleanup = || {
+            delete_obligation(&conn, &ObligationMatcher::All, None);
+        };
+        cleanup();
+        // give time for database to do its thing
+        std::thread::sleep(std::time::Duration::from_secs(2));
+        let ltv_one = 0.70;
+        let account_one = "account-1";
+        let account_data_one = "70".as_bytes().to_vec();
+        
+        let ltv_two = 0.75;
+        let account_two = "account-2";
+        let account_data_two = "75".as_bytes().to_vec();
+
+        let ltv_three = 0.80;
+        let account_three= "account-3";
+        let account_data_three = "80".as_bytes().to_vec();
+
+        let ltv_four = 0.85;
+        let account_four = "account-4";
+        let account_data_four = "85".as_bytes().to_vec();
+
+        put_obligation(
+            &conn,
+            ltv_one,
+            account_one,
+            account_data_one,
+            scraped_at_one,
+        ).unwrap();
+        put_obligation(
+            &conn,
+            ltv_two,
+            account_two,
+            account_data_two,
+            scraped_at_one,
+        ).unwrap();
+        put_obligation(
+            &conn,
+            ltv_three,
+            account_three,
+            account_data_three,
+            scraped_at_one,
+        ).unwrap();
+        put_obligation(
+            &conn,
+            ltv_four,
+            account_four,
+            account_data_four,
+            scraped_at_one,
+        ).unwrap();
+
+        let results = get_obligation(
+            &conn,
+            &ObligationMatcher::All,
+            Some(LtvFilter::GE(0.70))
+        ).unwrap();
+        assert_eq!(results.len(), 4);
+
+        let results = get_obligation(
+            &conn,
+            &ObligationMatcher::All,
+            Some(LtvFilter::GE(0.75))
+        ).unwrap();
+        assert_eq!(results.len(), 3);
+
+        let results = get_obligation(
+            &conn,
+            &ObligationMatcher::All,
+            Some(LtvFilter::GE(0.80))
+        ).unwrap();
+        assert_eq!(results.len(), 2);
+        let results = get_obligation(
+            &conn,
+            &ObligationMatcher::All,
+            Some(LtvFilter::GE(0.85))
+        ).unwrap();
+        assert_eq!(results.len(), 1);
+
+        let results = get_obligation(
+            &conn,
+            &ObligationMatcher::All,
+            Some(LtvFilter::LE(0.85))
+        ).unwrap();
+        assert_eq!(results.len(), 4);
+        let results = get_obligation(
+            &conn,
+            &ObligationMatcher::All,
+            Some(LtvFilter::LE(0.80))
+        ).unwrap();
+        assert_eq!(results.len(), 3);
+        let results = get_obligation(
+            &conn,
+            &ObligationMatcher::All,
+            Some(LtvFilter::LE(0.75))
+        ).unwrap();
+        assert_eq!(results.len(), 2);
+        let results = get_obligation(
+            &conn,
+            &ObligationMatcher::All,
+            Some(LtvFilter::LE(0.70))
+        ).unwrap();
+        assert_eq!(results.len(), 1);
+
+        let results = get_obligation(
+            &conn,
+            &ObligationMatcher::All,
+            Some(LtvFilter::GT(0.85))
+        ).unwrap();
+        assert_eq!(results.len(), 0);
+        let results = get_obligation(
+            &conn,
+            &ObligationMatcher::All,
+            Some(LtvFilter::GT(0.80))
+        ).unwrap();
+        assert_eq!(results.len(), 1);
+        let results = get_obligation(
+            &conn,
+            &ObligationMatcher::All,
+            Some(LtvFilter::GT(0.75))
+        ).unwrap();
+        assert_eq!(results.len(), 2);
+        let results = get_obligation(
+            &conn,
+            &ObligationMatcher::All,
+            Some(LtvFilter::GT(0.70))
+        ).unwrap();
+        assert_eq!(results.len(), 3);
+        let results = get_obligation(
+            &conn,
+            &ObligationMatcher::All,
+            Some(LtvFilter::GT(0.69))
+        ).unwrap();
+        assert_eq!(results.len(), 4);
+
+        let results = get_obligation(
+            &conn,
+            &ObligationMatcher::All,
+            Some(LtvFilter::LT(0.90))
+        ).unwrap();
+        assert_eq!(results.len(), 4);
+        let results = get_obligation(
+            &conn,
+            &ObligationMatcher::All,
+            Some(LtvFilter::LT(0.85))
+        ).unwrap();
+        assert_eq!(results.len(), 3);
+        let results = get_obligation(
+            &conn,
+            &ObligationMatcher::All,
+            Some(LtvFilter::LT(0.80))
+        ).unwrap();
+        assert_eq!(results.len(), 2);
+        let results = get_obligation(
+            &conn,
+            &ObligationMatcher::All,
+            Some(LtvFilter::LT(0.75))
+        ).unwrap();
+        assert_eq!(results.len(), 1);
+        let results = get_obligation(
+            &conn,
+            &ObligationMatcher::All,
+            Some(LtvFilter::LT(0.70))
+        ).unwrap();
+        assert_eq!(results.len(), 0);
     }
 }

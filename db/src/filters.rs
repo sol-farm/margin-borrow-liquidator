@@ -60,3 +60,17 @@ impl PriceFeedMatcher {
         ft
     }
 }
+
+#[derive(Clone, Copy, Debug)]
+/// helper type used for applying additional query filters
+/// when searching for obligations
+pub enum LtvFilter {
+    /// filters obligations with an ltv greater than or equal to the given value
+    GE(f64),
+    /// filters obligations with an ltv less than or equal to the given value
+    LE(f64),
+    /// filters obligations with an ltv greater than the given value
+    GT(f64),
+    /// filters obligations with an ltv less than the given value
+    LT(f64),
+}

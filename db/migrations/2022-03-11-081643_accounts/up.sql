@@ -7,7 +7,7 @@ CREATE TABLE obligations (
   -- the address of the obligation account
   account VARCHAR NOT NULL UNIQUE,
   -- the actual data of the account base64 encoded
-  account_data BYTEA,
+  account_data BYTEA NOT NULL,
   -- the time at which this data was last updated at
   scraped_at TIMESTAMPTZ NOT NULL
 );
