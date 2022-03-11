@@ -1,7 +1,10 @@
 [workspace]
 members = [
+    "channels",
+    "cli",
     "config",
-    "rpc_utils"
+    "db",
+    "rpc_utils",
 ]
 [profile.release]
 lto = "fat"
