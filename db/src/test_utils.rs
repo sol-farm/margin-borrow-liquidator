@@ -24,7 +24,7 @@ impl TestDb {
         // todo(bonedaddy): this is temporary
         std::env::set_var(
             "DATABASE_URL",
-            "postgres://postgres:password123@localhost/tulip",
+            "postgres://postgres:password123@localhost/liquidator",
         );
         let default_db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL");
         let conn = diesel_logger::LoggingConnection::new(
