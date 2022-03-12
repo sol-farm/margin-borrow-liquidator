@@ -10,6 +10,7 @@ pub mod rpcs;
 pub mod telemetry;
 pub mod utils;
 
+use liquidator::Liquidator;
 use telemetry::Telemetry;
 
 use crate::{
@@ -40,6 +41,7 @@ pub struct Configuration {
     pub database: Database,
     pub debug_log: bool,
     pub key_path: String,
+    pub liquidator: Liquidator,
     pub log_file: String,
     pub programs: Programs,
     pub rpc_endpoints: RPCs,
@@ -191,7 +193,6 @@ impl Default for Configuration {
                     ws_url: "ws://solana-api.projectserum.com".to_string(),
                 }],
             },
-            key_path: "".to_string(),
             database: Database {
                 analytics_pool_size: 2,
                 conn_url: "postgres://postgres:password123@localhost/liquidator".to_string(),
@@ -205,6 +206,7 @@ impl Default for Configuration {
                 enabled: true,
                 agent_endpoint: String::from("http://localhost:8126"),
             },
+            ..Default::default()
         }
     }
 }

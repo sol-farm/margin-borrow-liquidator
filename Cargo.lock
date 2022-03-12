@@ -2323,6 +2323,41 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7fb9b38af92608140b86b693604b9ffcc5824240a484d1ecd4795bacb2fe88f3"
 
 [[package]]
+name = "liquidator"
+version = "0.1.0"
+dependencies = [
+ "anchor-client",
+ "anchor-lang",
+ "anyhow",
+ "arrform",
+ "bytemuck",
+ "channels",
+ "chrono",
+ "config",
+ "crossbeam",
+ "crossbeam-channel",
+ "crossbeam-queue",
+ "crossbeam-utils",
+ "db",
+ "diesel",
+ "log 0.4.14",
+ "rayon",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "simplelog",
+ "solana-account-decoder",
+ "solana-client",
+ "solana-sdk",
+ "spl-associated-token-account",
+ "spl-token",
+ "static-pubkey",
+ "thiserror",
+ "tokio",
+ "tulipv2-sdk-common",
+]
+
+[[package]]
 name = "lock_api"
 version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"

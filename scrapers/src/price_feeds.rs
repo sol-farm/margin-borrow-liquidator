@@ -38,6 +38,11 @@ pub fn scrape_price_feeds(
     price_feed_accounts
     .iter_mut()
     .for_each(|(price_key, price_account)| {
+        // take the value, replacing it with a default Price object
+        // which will help to free up a small bit of memory related to this
+        // price_account once each closure completes
+        //
+        // this is also more cost effective than cloning each price account
         let price_account = std::mem::take(price_account);
         let pyth_price = match pyth::parse_pyth_price(&price_account) {
             Ok(pyth_price) => pyth_price,

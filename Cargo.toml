@@ -5,6 +5,7 @@ members = [
     "cli",
     "config",
     "db",
+    "liquidator",
     "rpc_utils",
     "scrapers"
 ]
