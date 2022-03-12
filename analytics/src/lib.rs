@@ -65,7 +65,7 @@ impl Service {
                                 &service.rpc,
                                 &conn,
                                 &price_feed_map,
-                                scraped_at
+                                scraped_at,
                             );
                             info!("finished price feed scraping");
                             drop(wg);

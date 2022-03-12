@@ -1,16 +1,13 @@
 #![allow(missing_docs)]
 
 use anchor_lang::prelude::*;
-use bytemuck::{
-    cast_slice, from_bytes, try_cast_slice,
-    Pod, PodCastError, Zeroable, 
-};
+use anyhow::{anyhow, Result};
+use bytemuck::{cast_slice, from_bytes, try_cast_slice, Pod, PodCastError, Zeroable};
 use solana_sdk::account::Account;
-use std::mem::size_of;
-use anyhow::{Result, anyhow};
-use tulipv2_sdk_common::math::decimal::Decimal;
-use tulipv2_sdk_common::math::common::TryDiv;
 use std::convert::TryInto;
+use std::mem::size_of;
+use tulipv2_sdk_common::math::common::TryDiv;
+use tulipv2_sdk_common::math::decimal::Decimal;
 /// after this many slots consider a price update as being stale and thus invalid
 // 30 slots translates to a period of around 15s depending on slot times
 pub const STALE_AFTER_SLOTS_ELAPSED: u64 = 120;
@@ -50,7 +47,7 @@ pub enum PriceStatus {
     Auction,
 }
 
-impl std::fmt::Display for PriceStatus { 
+impl std::fmt::Display for PriceStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(self.name().as_str())
     }
@@ -58,12 +55,12 @@ impl std::fmt::Display for PriceStatus {
 
 impl PriceStatus {
     pub fn name(&self) -> String {
-            match self {
-                PriceStatus::Unknown => String::from("unknown"),
-                PriceStatus::Trading => String::from("trading"),
-                PriceStatus::Halted => String::from("halted"),
-                PriceStatus::Auction => String::from("auction"),
-            }
+        match self {
+            PriceStatus::Unknown => String::from("unknown"),
+            PriceStatus::Trading => String::from("trading"),
+            PriceStatus::Halted => String::from("halted"),
+            PriceStatus::Auction => String::from("auction"),
+        }
     }
 }
 
@@ -180,33 +177,27 @@ pub fn load<T: Pod>(data: &[u8]) -> Result<&T, PodCastError> {
 /// returns the price contained in a price feed account, without
 /// validating price staleness
 pub fn get_pyth_price(pyth_price_info: &Account) -> Result<Decimal> {
-    let pyth_price = load::<Price>(&pyth_price_info.data)
-        .map_err(|_| ProgramError::InvalidAccountData)?;
+    let pyth_price =
+        load::<Price>(&pyth_price_info.data).map_err(|_| ProgramError::InvalidAccountData)?;
     if pyth_price.ptype as u32 != PriceType::Price as u32 {
         return Err(anyhow!("invalid oracle config"));
     }
 
-    let price: u64 = match pyth_price
-        .agg
-        .price
-        .checked_abs() {
-            Some(val) => val.try_into()?,
-            None => return Err(anyhow!("math overflow"))
-        };
+    let price: u64 = match pyth_price.agg.price.checked_abs() {
+        Some(val) => val.try_into()?,
+        None => return Err(anyhow!("math overflow")),
+    };
 
     // @TODO: handle the case that the exponent is positive?
-    let pyth_exponent = match pyth_price
-        .expo
-        .checked_abs() {
-            Some(val) => val.try_into()?,
-            None => return Err(anyhow!("math overflow")),
-        };
+    let pyth_exponent = match pyth_price.expo.checked_abs() {
+        Some(val) => val.try_into()?,
+        None => return Err(anyhow!("math overflow")),
+    };
 
-    let pyth_decimals = match 10u64
-        .checked_pow(pyth_exponent) {
-            Some(val) => val,
-            None => return Err(anyhow!("math overflow")),
-        };
+    let pyth_decimals = match 10u64.checked_pow(pyth_exponent) {
+        Some(val) => val,
+        None => return Err(anyhow!("math overflow")),
+    };
     let market_price = Decimal::from(price).try_div(pyth_decimals)?;
 
     Ok(market_price)
@@ -215,13 +206,14 @@ pub fn get_pyth_price(pyth_price_info: &Account) -> Result<Decimal> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use anchor_lang::solana_program;
     use solana_client::rpc_client::RpcClient;
     use static_pubkey::static_pubkey;
-    use anchor_lang::solana_program;
     #[test]
     fn test_get_pyth_price() {
         let rpc = RpcClient::new("https://ssc-dao.genesysgo.net".to_string());
-        let tulip_price_account_key = static_pubkey!("5RHxy1NbUR15y34uktDbN1a2SWbhgHwkCZ75yK2RJ1FC");
+        let tulip_price_account_key =
+            static_pubkey!("5RHxy1NbUR15y34uktDbN1a2SWbhgHwkCZ75yK2RJ1FC");
         let tulip_price_account = rpc.get_account(&tulip_price_account_key).unwrap();
         let tulip_price = get_pyth_price(&tulip_price_account).unwrap();
         println!("tulip price {}", tulip_price);

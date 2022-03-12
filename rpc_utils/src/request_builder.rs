@@ -36,8 +36,8 @@ impl<'a> RequestBuilder<'a> {
     /// returns a new request builder using an rpc with a customized timeout
     /// of 60 seconds, and a commitment of finalized
     pub fn new(
-        program_id: Pubkey, 
-        cluster_url: String, 
+        program_id: Pubkey,
+        cluster_url: String,
         payer: &'a dyn Signer,
         timeout: Option<std::time::Duration>,
         commitment: Option<CommitmentConfig>,
@@ -92,7 +92,7 @@ impl<'a> RequestBuilder<'a> {
         self.signers.push(signer);
         self
     }
-    /// sends the current transaction with the option to skip preflight, or 
+    /// sends the current transaction with the option to skip preflight, or
     /// display a spinner while waiting for confirmation
     pub fn send(&self, skip_preflight: bool, spinner: bool) -> Result<Signature> {
         let tx = self.create_tx()?;

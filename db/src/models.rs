@@ -5,8 +5,8 @@
 
 use crate::schema::*;
 
-use chrono::DateTime;
 use chrono::offset::Utc;
+use chrono::DateTime;
 #[derive(Queryable, Debug, Identifiable, AsChangeset, Model, Clone)]
 #[table_name = "obligations"]
 pub struct Obligation {
@@ -27,4 +27,3 @@ pub struct PriceFeed {
     pub price: f64,
     pub scraped_at: DateTime<Utc>,
 }
-

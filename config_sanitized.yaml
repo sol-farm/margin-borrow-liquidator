@@ -1,0 +1,27 @@
+---
+analytics:
+  obligation_refresh_concurrency: 0
+  price_feeds: []
+  scrape_interval: 0
+database:
+  analytics_pool_size: 2
+  conn_url: ""
+  pool_size: 2
+debug_log: false
+key_path: ""
+log_file: ""
+programs:
+  lending:
+    id: ""
+    idl_path: ""
+  pyth:
+    id: ""
+    idl_path: ""
+rpc_endpoints:
+  failover_endpoints: []
+  primary_endpoint:
+    http_url: ""
+    ws_url: ""
+telemetry:
+  agent_endpoint: ""
+  enabled: true

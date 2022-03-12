@@ -23,7 +23,4 @@ table! {
     }
 }
 
-allow_tables_to_appear_in_same_query!(
-    obligations,
-    price_feeds,
-);
+allow_tables_to_appear_in_same_query!(obligations, price_feeds,);

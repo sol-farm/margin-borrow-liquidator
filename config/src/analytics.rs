@@ -1,7 +1,7 @@
-use serde::{Deserialize, Serialize};
 use anchor_lang::solana_program::pubkey::Pubkey;
-use std::{str::FromStr, collections::HashMap};
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
+use serde::{Deserialize, Serialize};
+use std::{collections::HashMap, str::FromStr};
 #[remain::sorted]
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 /// provides configuration options for the analytics backend
@@ -33,9 +33,7 @@ pub struct PriceFeed {
 
 impl Analytics {
     /// returns a HashMap of price_account -> name
-    pub fn price_feed_map(
-        &self,
-    ) -> Result<HashMap<Pubkey, PriceFeed>> {
+    pub fn price_feed_map(&self) -> Result<HashMap<Pubkey, PriceFeed>> {
         let mut feed_map = HashMap::with_capacity(self.price_feeds.len());
         for price_feed in self.price_feeds.iter() {
             feed_map.insert(price_feed.price_account(), price_feed.clone());
@@ -44,15 +42,18 @@ impl Analytics {
     }
 }
 
-
 impl PriceFeed {
     pub fn price_account(&self) -> Pubkey {
-        if self.price_account.is_empty() { Pubkey::default() } else {
+        if self.price_account.is_empty() {
+            Pubkey::default()
+        } else {
             Pubkey::from_str(self.price_account.as_str()).unwrap()
         }
     }
     pub fn token_mint(&self) -> Pubkey {
-        if self.token_mint.is_empty() { Pubkey::default() } else {
+        if self.token_mint.is_empty() {
+            Pubkey::default()
+        } else {
             Pubkey::from_str(self.token_mint.as_str()).unwrap()
         }
     }

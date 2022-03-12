@@ -12,14 +12,14 @@ extern crate diesel_derives_traits;
 extern crate diesel_migrations;
 diesel_migrations::embed_migrations!("migrations");
 
+pub mod client;
 pub mod filters;
 pub mod models;
 pub mod schema;
 pub mod test_utils;
 pub mod utils;
-pub mod client;
 
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 use diesel::prelude::*;
 use diesel::r2d2;
 use diesel::r2d2::ConnectionManager;
@@ -29,7 +29,6 @@ pub fn run_migrations(conn: &PgConnection) -> Result<()> {
     embedded_migrations::run_with_output(conn, &mut std::io::stdout())?;
     Ok(())
 }
-
 
 /// returns a PgConnection pool
 pub fn new_connection_pool(

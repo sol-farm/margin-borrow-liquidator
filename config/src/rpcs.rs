@@ -1,10 +1,7 @@
 use crate::Configuration;
 use anchor_client::{
     solana_client::rpc_client::RpcClient,
-    solana_sdk::{
-        commitment_config::CommitmentConfig,
-        signature::{read_keypair_file},
-    },
+    solana_sdk::{commitment_config::CommitmentConfig, signature::read_keypair_file},
     Client, Cluster,
 };
 use serde::{Deserialize, Serialize};
@@ -39,7 +36,7 @@ impl Configuration {
             self.rpc_endpoints.primary_endpoint.http_url.clone(),
             payer,
             timeout,
-            commitment
+            commitment,
         )
     }
     /// returns the primary rpc provider with the value of `key_path` used as a signer

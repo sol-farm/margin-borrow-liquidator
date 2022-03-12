@@ -1,18 +1,15 @@
 use chrono::{DateTime, Utc};
 
-use config::Configuration;
 use diesel::PgConnection;
 use log::error;
 
+use config::analytics::PriceFeed;
+use diesel::Connection;
 use solana_account_decoder::UiAccountEncoding;
 use solana_client::{rpc_client::RpcClient, rpc_config::RpcAccountInfoConfig};
-use diesel::Connection;
-use std::str::FromStr;
-use solana_sdk::program_pack::Pack;
 use solana_sdk::pubkey::Pubkey;
-use spl_token::state::Mint;
-use config::analytics::PriceFeed;
 use std::collections::HashMap;
+use std::str::FromStr;
 
 use std::sync::Arc;
 
@@ -22,7 +19,6 @@ pub fn scrape_price_feeds(
     price_feeds: &Arc<HashMap<Pubkey, PriceFeed>>,
     scraped_at: DateTime<Utc>,
 ) {
-
     let price_feeds_len = price_feeds.len();
 
     let mut price_accounts = Vec::with_capacity(price_feeds_len);
@@ -65,13 +61,11 @@ pub fn scrape_price_feeds(
                     continue;
                 }
             };
-            let price = match f64::from_str(
-                &price.to_string(),
-            ) {
+            let price = match f64::from_str(&price.to_string()) {
                 Ok(price) => price,
                 Err(err) => {
                     error!(
-                        "failed to parse price to float {}({}): {:#?}", 
+                        "failed to parse price to float {}({}): {:#?}",
                         price_account_names[idx].name, price_accounts[idx], err
                     );
                     continue;
@@ -85,7 +79,10 @@ pub fn scrape_price_feeds(
                 scraped_at,
             })
         } else {
-            error!("price_account {}({}) is None", &price_account_names[idx].name, price_accounts[idx]);
+            error!(
+                "price_account {}({}) is None",
+                &price_account_names[idx].name, price_accounts[idx]
+            );
             continue;
         }
     }

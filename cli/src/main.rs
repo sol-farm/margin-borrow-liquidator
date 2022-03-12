@@ -6,10 +6,10 @@
 static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
 use anyhow::{anyhow, Result};
 
-use log::error;
-use pprof::*;
 use clap::{App, Arg, SubCommand};
 use git_version::git_version;
+use log::error;
+use pprof::*;
 mod config;
 mod helpers;
 use std::str::FromStr;
@@ -21,52 +21,50 @@ const GIT_VERSION: &str = git_version!(args = ["--abbrev=32", "--always"]);
 async fn main() -> Result<()> {
     use std::fs::File;
 
-
     let skip_preflight_flag = Arg::with_name("skip-preflight")
         .long("skip-preflight")
         .help("if present skip preflight checks")
         .required(false);
 
-
     let matches = App::new("tulip-cli")
-    .version("0.0.1")
-    .author("TULIP Protocol Developers <contact@tulip.garden>")
-    .long_version(format!("cli_git_ver {}", GIT_VERSION).as_str())
-    .arg(
-        Arg::with_name("config")
-            .short("c")
-            .long("config")
-            .value_name("FILE")
-            .help("sets the config file")
-            .takes_value(true)
-    )
-    .arg(    Arg::with_name("pprof")
-            .help("enable profiling of performance")
-            .long("pprof")
-            .takes_value(false)
-            .required(false),
-    )
-    .arg(
-        Arg::with_name("pprof-path")
-        .help("location to store pprof reports")
-        .long("pprof-path")
-        .takes_value(true)
-        .value_name("FILEPATH")
-        .required(false),
-    )
-    .arg(
-        Arg::with_name("pprof-frequency")
-        .help("frequency of collecting samples")
-        .long("pprof-frequency")
-        .takes_value(true)
-        .value_name("FREQUENCY")
-        .required(false)
-    )
-    .subcommand(
-        SubCommand::with_name("config")
-        .about("configuration management commands")
-        .subcommands(
-            vec![
+        .version("0.0.1")
+        .author("TULIP Protocol Developers <contact@tulip.garden>")
+        .long_version(format!("cli_git_ver {}", GIT_VERSION).as_str())
+        .arg(
+            Arg::with_name("config")
+                .short("c")
+                .long("config")
+                .value_name("FILE")
+                .help("sets the config file")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("pprof")
+                .help("enable profiling of performance")
+                .long("pprof")
+                .takes_value(false)
+                .required(false),
+        )
+        .arg(
+            Arg::with_name("pprof-path")
+                .help("location to store pprof reports")
+                .long("pprof-path")
+                .takes_value(true)
+                .value_name("FILEPATH")
+                .required(false),
+        )
+        .arg(
+            Arg::with_name("pprof-frequency")
+                .help("frequency of collecting samples")
+                .long("pprof-frequency")
+                .takes_value(true)
+                .value_name("FREQUENCY")
+                .required(false),
+        )
+        .subcommand(
+            SubCommand::with_name("config")
+                .about("configuration management commands")
+                .subcommands(vec![
                 SubCommand::with_name("new")
                 .about("generates a new and empty configuration file")
                 .arg(
@@ -83,17 +81,18 @@ async fn main() -> Result<()> {
                 .about("exports the yaml config file into a json file"),
                 SubCommand::with_name("interest-rate")
                 .about("interest rate scraper configuration management")
-            ]
+            ]),
         )
-    )
-    .get_matches();
+        .get_matches();
     let config_file_path = get_config_or_default(&matches);
     if matches.is_present("pprof") {
         let guard = pprof::ProfilerGuardBuilder::default()
-        .frequency(
-            i32::from_str(matches.value_of("pprof-frequency").unwrap_or("100"))?,
-        )
-        .blocklist(&["libc", "libgcc", "pthread"]).build().unwrap();
+            .frequency(i32::from_str(
+                matches.value_of("pprof-frequency").unwrap_or("100"),
+            )?)
+            .blocklist(&["libc", "libgcc", "pthread"])
+            .build()
+            .unwrap();
         // need to call this here to prevent `guard` from being dropped
         match process_matches(&matches, config_file_path).await {
             Ok(_) => (),
@@ -109,7 +108,7 @@ async fn main() -> Result<()> {
     } else {
         process_matches(&matches, config_file_path).await?;
     }
-    
+
     Ok(())
 }
 

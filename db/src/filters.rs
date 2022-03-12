@@ -1,13 +1,12 @@
 use into_query::IntoQuery;
 
-
 #[derive(IntoQuery, Default)]
 #[table_name = "obligations"]
 pub struct FindObligation {
     pub account: Option<Vec<String>>,
 }
 
-#[derive(IntoQuery, Default)] 
+#[derive(IntoQuery, Default)]
 #[table_name = "price_feeds"]
 pub struct FindPriceFeed {
     pub token_mint: Option<Vec<String>>,
@@ -28,7 +27,6 @@ pub enum PriceFeedMatcher {
     /// return all records
     All,
 }
-
 
 impl ObligationMatcher {
     /// returns an instance of the obligation matcher

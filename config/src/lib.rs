@@ -4,25 +4,23 @@
 
 pub mod analytics;
 pub mod database;
+pub mod liquidator;
 pub mod programs;
 pub mod rpcs;
 pub mod telemetry;
 pub mod utils;
-pub mod liquidator;
 
 use telemetry::Telemetry;
 
 use crate::{
     analytics::Analytics,
     database::Database,
-    programs::{Programs},
+    programs::Programs,
     rpcs::{RPCEndpoint, RPCs},
 };
-use anchor_client::{
-    solana_sdk::{
-        pubkey::Pubkey,
-        signature::{read_keypair_file, Keypair},
-    },
+use anchor_client::solana_sdk::{
+    pubkey::Pubkey,
+    signature::{read_keypair_file, Keypair},
 };
 
 use anyhow::{anyhow, Result};
@@ -221,7 +219,7 @@ mod tests {
         config.database.conn_url = "420".to_string();
         config.rpc_endpoints.primary_endpoint.http_url = "420".to_string();
         config.rpc_endpoints.primary_endpoint.ws_url = "420".to_string();
-        config.rpc_endpoints.failover_endpoints.push(RPCEndpoint{
+        config.rpc_endpoints.failover_endpoints.push(RPCEndpoint {
             http_url: "420".to_string(),
             ws_url: "420".to_string(),
         });

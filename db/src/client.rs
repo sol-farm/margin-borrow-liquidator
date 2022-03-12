@@ -1,9 +1,7 @@
 use crate::filters::{
-    FindObligation, FindPriceFeed, PriceFeedMatcher, ObligationMatcher, LtvFilter,
+    FindObligation, FindPriceFeed, LtvFilter, ObligationMatcher, PriceFeedMatcher,
 };
-use crate::models::{
-    Obligation, PriceFeed
-};
+use crate::models::{Obligation, PriceFeed};
 use crate::schema::*;
 use anyhow::{anyhow, Result};
 use arrform::{arrform, ArrForm};
@@ -13,10 +11,9 @@ use diesel::PgConnection;
 use diesel::*;
 use diesel_derives_traits::{Model, NewModel};
 use into_query::IntoQuery;
-use log::{info, warn, error};
+use log::{error, info, warn};
 use std::convert::TryInto;
 use std::sync::Arc;
-
 
 #[derive(Debug, Insertable, NewModel)]
 #[table_name = "obligations"]
@@ -27,7 +24,6 @@ pub struct NewObligation {
     pub account_data: Vec<u8>,
     pub scraped_at: DateTime<Utc>,
 }
-
 
 #[derive(Debug, Insertable, NewModel)]
 #[table_name = "price_feeds"]
@@ -53,7 +49,7 @@ pub fn put_price_feed(
     conn.transaction(|| {
         let mut results = get_price_feed(
             conn,
-            &PriceFeedMatcher::PriceAccount(vec![price_account.to_string()])
+            &PriceFeedMatcher::PriceAccount(vec![price_account.to_string()]),
         )?;
         if results.is_empty() {
             // no record, create it
@@ -63,7 +59,8 @@ pub fn put_price_feed(
                 decimals,
                 price,
                 scraped_at,
-            }.save(conn)?;
+            }
+            .save(conn)?;
         } else {
             let mut price_feed = std::mem::take(&mut results[0]);
             price_feed.price = price;
@@ -74,23 +71,19 @@ pub fn put_price_feed(
     })
 }
 
-
-/// returns any price feeds matched by the given matcher 
+/// returns any price feeds matched by the given matcher
 pub fn get_price_feed(
     conn: &PgConnection,
-    matcher: &PriceFeedMatcher,   
+    matcher: &PriceFeedMatcher,
 ) -> QueryResult<Vec<PriceFeed>> {
     matcher
-    .to_filter()
-    .into_query()
-    .get_results::<PriceFeed>(conn)
+        .to_filter()
+        .into_query()
+        .get_results::<PriceFeed>(conn)
 }
 
 /// deletes any price feeds matched by the given matcher
-pub fn delete_price_feed(
-    conn: &PgConnection,
-    matcher: &PriceFeedMatcher,     
-) -> Result<()> {
+pub fn delete_price_feed(conn: &PgConnection, matcher: &PriceFeedMatcher) -> Result<()> {
     let mut results = get_price_feed(conn, matcher)?;
     for result in &mut results {
         std::mem::take(result).destroy(conn)?;
@@ -120,7 +113,8 @@ pub fn put_obligation(
                 account: account.to_string(),
                 account_data,
                 scraped_at,
-            }.save(conn)?;
+            }
+            .save(conn)?;
         } else {
             let mut obligation = std::mem::take(&mut results[0]);
             obligation.account_data = account_data;
@@ -131,30 +125,20 @@ pub fn put_obligation(
     })
 }
 
-/// returns any obligations matched by the given matcher 
+/// returns any obligations matched by the given matcher
 pub fn get_obligation(
     conn: &PgConnection,
     matcher: &ObligationMatcher,
     ltv_filter: Option<LtvFilter>,
 ) -> QueryResult<Vec<Obligation>> {
     use crate::schema::obligations::dsl::*;
-    let query = matcher
-    .to_filter()
-    .into_query();
+    let query = matcher.to_filter().into_query();
     let query = if let Some(ltv_filter) = ltv_filter {
         match ltv_filter {
-            LtvFilter::GE(ltv_val) => {
-                query.filter(ltv.ge(ltv_val))
-            },
-            LtvFilter::LE(ltv_val) => {
-                query.filter(ltv.le(ltv_val))
-            },
-            LtvFilter::GT(ltv_val) => {
-                query.filter(ltv.gt(ltv_val))
-            },
-            LtvFilter::LT(ltv_val) => {
-                query.filter(ltv.lt(ltv_val))
-            },
+            LtvFilter::GE(ltv_val) => query.filter(ltv.ge(ltv_val)),
+            LtvFilter::LE(ltv_val) => query.filter(ltv.le(ltv_val)),
+            LtvFilter::GT(ltv_val) => query.filter(ltv.gt(ltv_val)),
+            LtvFilter::LT(ltv_val) => query.filter(ltv.lt(ltv_val)),
         }
     } else {
         query
@@ -174,7 +158,6 @@ pub fn delete_obligation(
     }
     Ok(())
 }
-
 
 #[cfg(test)]
 mod test {
@@ -215,12 +198,20 @@ mod test {
         let decimals_2 = 9_i16;
         let price_2 = 69.420;
 
-        // we should have no results 
+        // we should have no results
         let results = get_price_feed(&conn, &PriceFeedMatcher::All).unwrap();
         assert_eq!(results.len(), 0);
-        let results = get_price_feed(&conn, &PriceFeedMatcher::PriceAccount(vec![price_account_1.to_string()])).unwrap();
+        let results = get_price_feed(
+            &conn,
+            &PriceFeedMatcher::PriceAccount(vec![price_account_1.to_string()]),
+        )
+        .unwrap();
         assert_eq!(results.len(), 0);
-        let results = get_price_feed(&conn, &PriceFeedMatcher::TokenMint(vec![token_mint_1.to_string()])).unwrap();
+        let results = get_price_feed(
+            &conn,
+            &PriceFeedMatcher::TokenMint(vec![token_mint_1.to_string()]),
+        )
+        .unwrap();
         assert_eq!(results.len(), 0);
 
         // test the first update to a price feed, creating it
@@ -232,7 +223,8 @@ mod test {
                 decimals_1,
                 price_1,
                 scraped_at_one,
-            ).unwrap();
+            )
+            .unwrap();
 
             let results = get_price_feed(&conn, &PriceFeedMatcher::All).unwrap();
             assert_eq!(results.len(), 1);
@@ -243,7 +235,11 @@ mod test {
             assert_eq!(results[0].scraped_at.minute(), scraped_at_one.minute());
             assert_eq!(results[0].scraped_at.second(), scraped_at_one.second());
             assert_eq!(results[0].price, price_1);
-            let results = get_price_feed(&conn, &PriceFeedMatcher::PriceAccount(vec![price_account_1.to_string()])).unwrap();
+            let results = get_price_feed(
+                &conn,
+                &PriceFeedMatcher::PriceAccount(vec![price_account_1.to_string()]),
+            )
+            .unwrap();
             assert_eq!(results.len(), 1);
             assert_eq!(results[0].token_mint, token_mint_1.to_string());
             assert_eq!(results[0].price_account, price_account_1.to_string());
@@ -252,7 +248,11 @@ mod test {
             assert_eq!(results[0].scraped_at.minute(), scraped_at_one.minute());
             assert_eq!(results[0].scraped_at.second(), scraped_at_one.second());
             assert_eq!(results[0].price, price_1);
-            let results = get_price_feed(&conn, &PriceFeedMatcher::TokenMint(vec![token_mint_1.to_string()])).unwrap();
+            let results = get_price_feed(
+                &conn,
+                &PriceFeedMatcher::TokenMint(vec![token_mint_1.to_string()]),
+            )
+            .unwrap();
             assert_eq!(results.len(), 1);
             assert_eq!(results[0].token_mint, token_mint_1.to_string());
             assert_eq!(results[0].price_account, price_account_1.to_string());
@@ -271,8 +271,9 @@ mod test {
                 decimals_1,
                 69.69,
                 scraped_at_one,
-            ).unwrap();
-            
+            )
+            .unwrap();
+
             let results = get_price_feed(&conn, &PriceFeedMatcher::All).unwrap();
             assert_eq!(results.len(), 1);
             assert_eq!(results[0].token_mint, token_mint_1.to_string());
@@ -282,7 +283,11 @@ mod test {
             assert_eq!(results[0].scraped_at.minute(), scraped_at_one.minute());
             assert_eq!(results[0].scraped_at.second(), scraped_at_one.second());
             assert_eq!(results[0].price, 69.69);
-            let results = get_price_feed(&conn, &PriceFeedMatcher::PriceAccount(vec![price_account_1.to_string()])).unwrap();
+            let results = get_price_feed(
+                &conn,
+                &PriceFeedMatcher::PriceAccount(vec![price_account_1.to_string()]),
+            )
+            .unwrap();
             assert_eq!(results.len(), 1);
             assert_eq!(results[0].token_mint, token_mint_1.to_string());
             assert_eq!(results[0].price_account, price_account_1.to_string());
@@ -291,7 +296,11 @@ mod test {
             assert_eq!(results[0].scraped_at.minute(), scraped_at_one.minute());
             assert_eq!(results[0].scraped_at.second(), scraped_at_one.second());
             assert_eq!(results[0].price, 69.69);
-            let results = get_price_feed(&conn, &PriceFeedMatcher::TokenMint(vec![token_mint_1.to_string()])).unwrap();
+            let results = get_price_feed(
+                &conn,
+                &PriceFeedMatcher::TokenMint(vec![token_mint_1.to_string()]),
+            )
+            .unwrap();
             assert_eq!(results.len(), 1);
             assert_eq!(results[0].token_mint, token_mint_1.to_string());
             assert_eq!(results[0].price_account, price_account_1.to_string());
@@ -310,11 +319,16 @@ mod test {
                 decimals_2,
                 price_2,
                 scraped_at_two,
-            ).unwrap();
+            )
+            .unwrap();
 
             let results = get_price_feed(&conn, &PriceFeedMatcher::All).unwrap();
             assert_eq!(results.len(), 2);
-            let results = get_price_feed(&conn, &PriceFeedMatcher::PriceAccount(vec![price_account_2.to_string()])).unwrap();
+            let results = get_price_feed(
+                &conn,
+                &PriceFeedMatcher::PriceAccount(vec![price_account_2.to_string()]),
+            )
+            .unwrap();
             assert_eq!(results.len(), 1);
             assert_eq!(results[0].token_mint, token_mint_2.to_string());
             assert_eq!(results[0].price_account, price_account_2.to_string());
@@ -323,7 +337,11 @@ mod test {
             assert_eq!(results[0].scraped_at.minute(), scraped_at_two.minute());
             assert_eq!(results[0].scraped_at.second(), scraped_at_two.second());
             assert_eq!(results[0].price, price_2);
-            let results = get_price_feed(&conn, &PriceFeedMatcher::TokenMint(vec![token_mint_2.to_string()])).unwrap();
+            let results = get_price_feed(
+                &conn,
+                &PriceFeedMatcher::TokenMint(vec![token_mint_2.to_string()]),
+            )
+            .unwrap();
             assert_eq!(results.len(), 1);
             assert_eq!(results[0].token_mint, token_mint_2.to_string());
             assert_eq!(results[0].price_account, price_account_2.to_string());
@@ -342,11 +360,16 @@ mod test {
                 decimals_2,
                 420.42069,
                 scraped_at_two,
-            ).unwrap();
+            )
+            .unwrap();
 
             let results = get_price_feed(&conn, &PriceFeedMatcher::All).unwrap();
             assert_eq!(results.len(), 2);
-            let results = get_price_feed(&conn, &PriceFeedMatcher::PriceAccount(vec![price_account_2.to_string()])).unwrap();
+            let results = get_price_feed(
+                &conn,
+                &PriceFeedMatcher::PriceAccount(vec![price_account_2.to_string()]),
+            )
+            .unwrap();
             assert_eq!(results.len(), 1);
             assert_eq!(results[0].token_mint, token_mint_2.to_string());
             assert_eq!(results[0].price_account, price_account_2.to_string());
@@ -355,7 +378,11 @@ mod test {
             assert_eq!(results[0].scraped_at.minute(), scraped_at_two.minute());
             assert_eq!(results[0].scraped_at.second(), scraped_at_two.second());
             assert_eq!(results[0].price, 420.42069);
-            let results = get_price_feed(&conn, &PriceFeedMatcher::TokenMint(vec![token_mint_2.to_string()])).unwrap();
+            let results = get_price_feed(
+                &conn,
+                &PriceFeedMatcher::TokenMint(vec![token_mint_2.to_string()]),
+            )
+            .unwrap();
             assert_eq!(results.len(), 1);
             assert_eq!(results[0].token_mint, token_mint_2.to_string());
             assert_eq!(results[0].price_account, price_account_2.to_string());
@@ -400,12 +427,17 @@ mod test {
         let account_two = "account-2";
         let account_data_two = "69".as_bytes().to_vec();
 
-        // we should have no results 
+        // we should have no results
         let results = get_obligation(&conn, &ObligationMatcher::All, None).unwrap();
         assert_eq!(results.len(), 0);
-        let results = get_obligation(&conn, &ObligationMatcher::Account(vec![account_one.to_string()]), None).unwrap();
+        let results = get_obligation(
+            &conn,
+            &ObligationMatcher::Account(vec![account_one.to_string()]),
+            None,
+        )
+        .unwrap();
         assert_eq!(results.len(), 0);
-        
+
         // test first update to an account, creating the record
         {
             put_obligation(
@@ -414,11 +446,17 @@ mod test {
                 account_one,
                 account_data_one.clone(),
                 scraped_at_one,
-            ).unwrap();
+            )
+            .unwrap();
 
             let results = get_obligation(&conn, &ObligationMatcher::All, None).unwrap();
             assert_eq!(results.len(), 1);
-            let results = get_obligation(&conn, &ObligationMatcher::Account(vec![account_one.to_string()]), None).unwrap();
+            let results = get_obligation(
+                &conn,
+                &ObligationMatcher::Account(vec![account_one.to_string()]),
+                None,
+            )
+            .unwrap();
             assert_eq!(results.len(), 1);
             assert_eq!(results[0].ltv, ltv_one);
             assert_eq!(results[0].account.to_string(), account_one.to_string());
@@ -436,11 +474,17 @@ mod test {
                 account_one,
                 new_account_data.clone(),
                 scraped_at_one,
-            ).unwrap();
+            )
+            .unwrap();
 
             let results = get_obligation(&conn, &ObligationMatcher::All, None).unwrap();
             assert_eq!(results.len(), 1);
-            let results = get_obligation(&conn, &ObligationMatcher::Account(vec![account_one.to_string()]), None).unwrap();
+            let results = get_obligation(
+                &conn,
+                &ObligationMatcher::Account(vec![account_one.to_string()]),
+                None,
+            )
+            .unwrap();
             assert_eq!(results.len(), 1);
             assert_eq!(results[0].ltv, ltv_one);
             assert_eq!(results[0].account.to_string(), account_one.to_string());
@@ -457,11 +501,17 @@ mod test {
                 account_two,
                 account_data_two.clone(),
                 scraped_at_two,
-            ).unwrap();
+            )
+            .unwrap();
 
             let results = get_obligation(&conn, &ObligationMatcher::All, None).unwrap();
             assert_eq!(results.len(), 2);
-            let results = get_obligation(&conn, &ObligationMatcher::Account(vec![account_two.to_string()]), None).unwrap();
+            let results = get_obligation(
+                &conn,
+                &ObligationMatcher::Account(vec![account_two.to_string()]),
+                None,
+            )
+            .unwrap();
             assert_eq!(results.len(), 1);
             assert_eq!(results[0].ltv, ltv_two);
             assert_eq!(results[0].account.to_string(), account_two.to_string());
@@ -479,11 +529,17 @@ mod test {
                 account_two,
                 new_account_data_two.clone(),
                 scraped_at_two,
-            ).unwrap();
+            )
+            .unwrap();
 
             let results = get_obligation(&conn, &ObligationMatcher::All, None).unwrap();
             assert_eq!(results.len(), 2);
-            let results = get_obligation(&conn, &ObligationMatcher::Account(vec![account_two.to_string()]), None).unwrap();
+            let results = get_obligation(
+                &conn,
+                &ObligationMatcher::Account(vec![account_two.to_string()]),
+                None,
+            )
+            .unwrap();
             assert_eq!(results.len(), 1);
             assert_eq!(results[0].ltv, ltv_two);
             assert_eq!(results[0].account.to_string(), account_two.to_string());
@@ -518,13 +574,13 @@ mod test {
         let ltv_one = 0.70;
         let account_one = "account-1";
         let account_data_one = "70".as_bytes().to_vec();
-        
+
         let ltv_two = 0.75;
         let account_two = "account-2";
         let account_data_two = "75".as_bytes().to_vec();
 
         let ltv_three = 0.80;
-        let account_three= "account-3";
+        let account_three = "account-3";
         let account_data_three = "80".as_bytes().to_vec();
 
         let ltv_four = 0.85;
@@ -537,141 +593,91 @@ mod test {
             account_one,
             account_data_one,
             scraped_at_one,
-        ).unwrap();
+        )
+        .unwrap();
         put_obligation(
             &conn,
             ltv_two,
             account_two,
             account_data_two,
             scraped_at_one,
-        ).unwrap();
+        )
+        .unwrap();
         put_obligation(
             &conn,
             ltv_three,
             account_three,
             account_data_three,
             scraped_at_one,
-        ).unwrap();
+        )
+        .unwrap();
         put_obligation(
             &conn,
             ltv_four,
             account_four,
             account_data_four,
             scraped_at_one,
-        ).unwrap();
+        )
+        .unwrap();
 
-        let results = get_obligation(
-            &conn,
-            &ObligationMatcher::All,
-            Some(LtvFilter::GE(0.70))
-        ).unwrap();
+        let results =
+            get_obligation(&conn, &ObligationMatcher::All, Some(LtvFilter::GE(0.70))).unwrap();
         assert_eq!(results.len(), 4);
 
-        let results = get_obligation(
-            &conn,
-            &ObligationMatcher::All,
-            Some(LtvFilter::GE(0.75))
-        ).unwrap();
+        let results =
+            get_obligation(&conn, &ObligationMatcher::All, Some(LtvFilter::GE(0.75))).unwrap();
         assert_eq!(results.len(), 3);
 
-        let results = get_obligation(
-            &conn,
-            &ObligationMatcher::All,
-            Some(LtvFilter::GE(0.80))
-        ).unwrap();
+        let results =
+            get_obligation(&conn, &ObligationMatcher::All, Some(LtvFilter::GE(0.80))).unwrap();
         assert_eq!(results.len(), 2);
-        let results = get_obligation(
-            &conn,
-            &ObligationMatcher::All,
-            Some(LtvFilter::GE(0.85))
-        ).unwrap();
+        let results =
+            get_obligation(&conn, &ObligationMatcher::All, Some(LtvFilter::GE(0.85))).unwrap();
         assert_eq!(results.len(), 1);
 
-        let results = get_obligation(
-            &conn,
-            &ObligationMatcher::All,
-            Some(LtvFilter::LE(0.85))
-        ).unwrap();
+        let results =
+            get_obligation(&conn, &ObligationMatcher::All, Some(LtvFilter::LE(0.85))).unwrap();
         assert_eq!(results.len(), 4);
-        let results = get_obligation(
-            &conn,
-            &ObligationMatcher::All,
-            Some(LtvFilter::LE(0.80))
-        ).unwrap();
+        let results =
+            get_obligation(&conn, &ObligationMatcher::All, Some(LtvFilter::LE(0.80))).unwrap();
         assert_eq!(results.len(), 3);
-        let results = get_obligation(
-            &conn,
-            &ObligationMatcher::All,
-            Some(LtvFilter::LE(0.75))
-        ).unwrap();
+        let results =
+            get_obligation(&conn, &ObligationMatcher::All, Some(LtvFilter::LE(0.75))).unwrap();
         assert_eq!(results.len(), 2);
-        let results = get_obligation(
-            &conn,
-            &ObligationMatcher::All,
-            Some(LtvFilter::LE(0.70))
-        ).unwrap();
+        let results =
+            get_obligation(&conn, &ObligationMatcher::All, Some(LtvFilter::LE(0.70))).unwrap();
         assert_eq!(results.len(), 1);
 
-        let results = get_obligation(
-            &conn,
-            &ObligationMatcher::All,
-            Some(LtvFilter::GT(0.85))
-        ).unwrap();
+        let results =
+            get_obligation(&conn, &ObligationMatcher::All, Some(LtvFilter::GT(0.85))).unwrap();
         assert_eq!(results.len(), 0);
-        let results = get_obligation(
-            &conn,
-            &ObligationMatcher::All,
-            Some(LtvFilter::GT(0.80))
-        ).unwrap();
+        let results =
+            get_obligation(&conn, &ObligationMatcher::All, Some(LtvFilter::GT(0.80))).unwrap();
         assert_eq!(results.len(), 1);
-        let results = get_obligation(
-            &conn,
-            &ObligationMatcher::All,
-            Some(LtvFilter::GT(0.75))
-        ).unwrap();
+        let results =
+            get_obligation(&conn, &ObligationMatcher::All, Some(LtvFilter::GT(0.75))).unwrap();
         assert_eq!(results.len(), 2);
-        let results = get_obligation(
-            &conn,
-            &ObligationMatcher::All,
-            Some(LtvFilter::GT(0.70))
-        ).unwrap();
+        let results =
+            get_obligation(&conn, &ObligationMatcher::All, Some(LtvFilter::GT(0.70))).unwrap();
         assert_eq!(results.len(), 3);
-        let results = get_obligation(
-            &conn,
-            &ObligationMatcher::All,
-            Some(LtvFilter::GT(0.69))
-        ).unwrap();
+        let results =
+            get_obligation(&conn, &ObligationMatcher::All, Some(LtvFilter::GT(0.69))).unwrap();
         assert_eq!(results.len(), 4);
 
-        let results = get_obligation(
-            &conn,
-            &ObligationMatcher::All,
-            Some(LtvFilter::LT(0.90))
-        ).unwrap();
+        let results =
+            get_obligation(&conn, &ObligationMatcher::All, Some(LtvFilter::LT(0.90))).unwrap();
         assert_eq!(results.len(), 4);
-        let results = get_obligation(
-            &conn,
-            &ObligationMatcher::All,
-            Some(LtvFilter::LT(0.85))
-        ).unwrap();
+        let results =
+            get_obligation(&conn, &ObligationMatcher::All, Some(LtvFilter::LT(0.85))).unwrap();
         assert_eq!(results.len(), 3);
-        let results = get_obligation(
-            &conn,
-            &ObligationMatcher::All,
-            Some(LtvFilter::LT(0.80))
-        ).unwrap();
+        let results =
+            get_obligation(&conn, &ObligationMatcher::All, Some(LtvFilter::LT(0.80))).unwrap();
         assert_eq!(results.len(), 2);
-        let results = get_obligation(
-            &conn,
-            &ObligationMatcher::All,
-            Some(LtvFilter::LT(0.75))
-        ).unwrap();
+        let results =
+            get_obligation(&conn, &ObligationMatcher::All, Some(LtvFilter::LT(0.75))).unwrap();
         assert_eq!(results.len(), 1);
-        let results = get_obligation(
-            &conn,
-            &ObligationMatcher::All,
-            Some(LtvFilter::LT(0.70))
-        ).unwrap();
+        let results =
+            get_obligation(&conn, &ObligationMatcher::All, Some(LtvFilter::LT(0.70))).unwrap();
         assert_eq!(results.len(), 0);
     }
 }

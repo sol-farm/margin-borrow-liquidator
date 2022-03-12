@@ -2,3 +2,5 @@
 target/
 
 liquidator-cli
+
+config.yaml
