@@ -97,7 +97,7 @@ pub fn put_obligation(
     conn: &PgConnection,
     ltv: f64,
     account: &str,
-    account_data: Vec<u8>,
+    account_data: &[u8],
     scraped_at: DateTime<Utc>,
 ) -> Result<()> {
     conn.transaction(|| {
@@ -111,13 +111,13 @@ pub fn put_obligation(
             NewObligation {
                 ltv,
                 account: account.to_string(),
-                account_data,
+                account_data: account_data.to_vec(),
                 scraped_at,
             }
             .save(conn)?;
         } else {
             let mut obligation = std::mem::take(&mut results[0]);
-            obligation.account_data = account_data;
+            obligation.account_data = account_data.to_vec();
             obligation.ltv = ltv;
             obligation.save(conn)?;
         }
@@ -444,7 +444,7 @@ mod test {
                 &conn,
                 ltv_one,
                 account_one,
-                account_data_one.clone(),
+                &account_data_one[..],
                 scraped_at_one,
             )
             .unwrap();
@@ -472,7 +472,7 @@ mod test {
                 &conn,
                 ltv_one,
                 account_one,
-                new_account_data.clone(),
+                &new_account_data[..],
                 scraped_at_one,
             )
             .unwrap();
@@ -499,7 +499,7 @@ mod test {
                 &conn,
                 ltv_two,
                 account_two,
-                account_data_two.clone(),
+                &account_data_two[..],
                 scraped_at_two,
             )
             .unwrap();
@@ -527,7 +527,7 @@ mod test {
                 &conn,
                 ltv_two,
                 account_two,
-                new_account_data_two.clone(),
+                &new_account_data_two[..],
                 scraped_at_two,
             )
             .unwrap();
@@ -591,7 +591,7 @@ mod test {
             &conn,
             ltv_one,
             account_one,
-            account_data_one,
+            &account_data_one[..],
             scraped_at_one,
         )
         .unwrap();
@@ -599,7 +599,7 @@ mod test {
             &conn,
             ltv_two,
             account_two,
-            account_data_two,
+            &account_data_two[..],
             scraped_at_one,
         )
         .unwrap();
@@ -607,7 +607,7 @@ mod test {
             &conn,
             ltv_three,
             account_three,
-            account_data_three,
+            &account_data_three[..],
             scraped_at_one,
         )
         .unwrap();
@@ -615,7 +615,7 @@ mod test {
             &conn,
             ltv_four,
             account_four,
-            account_data_four,
+            &account_data_four[..],
             scraped_at_one,
         )
         .unwrap();

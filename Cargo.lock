@@ -4959,9 +4959,9 @@ checksum = "b6f4c70c8fe82613e0a32b00a3eab2557ec5dd110bddf471ace19de8fd4577d0"
 
 [[package]]
 name = "tulipv2-sdk-common"
-version = "0.9.4"
+version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cae8c11c7ff2cf0f8d1af3b5956749c50ff4517f2769ebf27ec254f575dc316b"
+checksum = "2c864d12fc2a58301369ce5c43f0dfd705de345588d300fbb7e816441ae85e23"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
@@ -4980,9 +4980,9 @@ dependencies = [
 
 [[package]]
 name = "tulipv2-sdk-farms"
-version = "0.9.4"
+version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bae18388040a213892fd508ed093cf8846a0b557fb5662fa5896806861a1ab7e"
+checksum = "ad3379a4cab17bab3a2e37a3d6d9a3e1d460744d09ce63e7f084b55871abb51d"
 dependencies = [
  "anchor-lang",
  "tulip-arrform",

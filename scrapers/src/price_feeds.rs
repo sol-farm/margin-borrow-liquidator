@@ -137,5 +137,9 @@ mod test {
             &db::filters::PriceFeedMatcher::All,
         ).unwrap();
         assert_eq!(price_feeds.len(), 1);
+        assert_eq!(price_feeds[0].token_mint, "TuLipcqtGVXP9XR62wM8WWCm6a9vhLs7T1uoWBk6FDs");
+        if price_feeds[0].price <= 0_f64 {
+            panic!("fuck");
+        }
     }
 }
