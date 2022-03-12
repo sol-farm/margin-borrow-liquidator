@@ -29,6 +29,7 @@ impl Service {
     }
     pub fn start(self: &Arc<Self>, exit_chan: crossbeam_channel::Receiver<bool>) -> Result<()> {
         let price_feed_map = Arc::new(self.config.analytics.price_account_map());
+        let reserve_account_map = Arc::new(self.config.analytics.reserve_map());
         let work_loop = || {
             let scraped_at = Utc::now();
             let wg = WaitGroup::new();
@@ -38,9 +39,17 @@ impl Service {
                     Ok(conn) => {
                         let wg = wg.clone();
                         let scraped_at = scraped_at;
+                        let reserve_account_map = Arc::clone(&reserve_account_map);
                         let service = Arc::clone(self);
                         tokio::task::spawn_blocking(move || {
                             info!("initiating obligation account scraper");
+                            scrapers::lending_obligation::scrape_lending_obligations(
+                                &service.config,
+                                &service.rpc,
+                                &conn,
+                                &reserve_account_map,
+                                scraped_at,
+                            );
                             info!("finished obligation account scraping");
                             drop(wg);
                         });
