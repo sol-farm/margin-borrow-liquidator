@@ -28,7 +28,7 @@ pub struct PriceFeed {
     pub token_mint: String,
     /// number of decimals in the quote token used
     /// by the price feed
-    pub quote_decimals: u8,
+    pub quote_decimals: i16,
 }
 
 impl Analytics {

@@ -1,8 +1,13 @@
 ---
 analytics:
   obligation_refresh_concurrency: 0
-  price_feeds: []
-  scrape_interval: 0
+  price_feeds:
+    - name: TULIP
+      price_account: 5RHxy1NbUR15y34uktDbN1a2SWbhgHwkCZ75yK2RJ1FC
+      token_decimals: 6
+      token_mint: TuLipcqtGVXP9XR62wM8WWCm6a9vhLs7T1uoWBk6FDs
+      quote_decimals: -6
+  scrape_interval: 30
 database:
   analytics_pool_size: 2
   conn_url: ""
