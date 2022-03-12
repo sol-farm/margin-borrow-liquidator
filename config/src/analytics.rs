@@ -10,6 +10,7 @@ pub struct Analytics {
     pub obligation_refresh_concurrency: u64,
     /// information for scraping pricing related data
     pub price_feeds: Vec<PriceFeed>,
+    pub reserves: Vec<Reserve>,
     /// how often we start the analytics scraper work loop
     pub scrape_interval: u64,
 }
@@ -31,14 +32,35 @@ pub struct PriceFeed {
     pub quote_decimals: i16,
 }
 
+
+#[derive(Default, Clone, Debug, Serialize, Deserialize)]
+pub struct Reserve {
+    /// name of the reserve
+    pub name: String,
+    /// reserve account address
+    pub account: String,
+}
+
+
 impl Analytics {
-    /// returns a HashMap of price_account -> name
-    pub fn price_feed_map(&self) -> Result<HashMap<Pubkey, PriceFeed>> {
+    /// returns a HashMap of price_account -> PriceFeed
+    pub fn price_feed_map(&self) -> HashMap<Pubkey, PriceFeed> {
         let mut feed_map = HashMap::with_capacity(self.price_feeds.len());
         for price_feed in self.price_feeds.iter() {
             feed_map.insert(price_feed.price_account(), price_feed.clone());
         }
-        Ok(feed_map)
+        feed_map
+    }
+    /// returns a HashMap of reserve_name -> reserve_account
+    pub fn get_reserve_map(&self) -> HashMap<Pubkey, String> {
+        let mut reserve_map = HashMap::with_capacity(self.reserves.len());
+        for reserve in self.reserves.iter() {
+            reserve_map.insert(
+                reserve.account(),
+                reserve.name.clone(),
+            );
+        }
+        reserve_map
     }
 }
 
@@ -55,6 +77,16 @@ impl PriceFeed {
             Pubkey::default()
         } else {
             Pubkey::from_str(self.token_mint.as_str()).unwrap()
+        }
+    }
+}
+
+impl Reserve {
+    pub fn account(&self) -> Pubkey {
+        if self.account.is_empty() {
+            Pubkey::default()
+        } else {
+            Pubkey::from_str(self.account.as_str()).unwrap()
         }
     }
 }
