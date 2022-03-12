@@ -1,7 +1,7 @@
 use anchor_lang::solana_program::pubkey::Pubkey;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, str::FromStr};
+use std::{collections::HashMap, str::FromStr, sync::Arc};
 #[remain::sorted]
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 /// provides configuration options for the analytics backend
@@ -43,7 +43,15 @@ pub struct Reserve {
 
 
 impl Analytics {
-    /// returns a HashMap of price_account -> PriceFeed
+    /// returns a HashMap of price_account -> price_feed_name
+    pub fn price_account_map(&self) -> HashMap<Pubkey, String> {
+        let mut feed_map = HashMap::with_capacity(self.price_feeds.len());
+        for price_feed in self.price_feeds.iter() {
+            feed_map.insert(price_feed.price_account(), price_feed.name.clone());
+        }
+        feed_map
+    }
+    /// returns a HashMap of price_account -> price_feed
     pub fn price_feed_map(&self) -> HashMap<Pubkey, PriceFeed> {
         let mut feed_map = HashMap::with_capacity(self.price_feeds.len());
         for price_feed in self.price_feeds.iter() {
@@ -51,8 +59,9 @@ impl Analytics {
         }
         feed_map
     }
+    
     /// returns a HashMap of reserve_name -> reserve_account
-    pub fn get_reserve_map(&self) -> HashMap<Pubkey, String> {
+    pub fn reserve_map(&self) -> HashMap<Pubkey, String> {
         let mut reserve_map = HashMap::with_capacity(self.reserves.len());
         for reserve in self.reserves.iter() {
             reserve_map.insert(
@@ -61,6 +70,20 @@ impl Analytics {
             );
         }
         reserve_map
+    }
+    /// returns a PriceFeed object by searching
+    /// for the price account
+    pub fn price_feed_by_account(
+        &self,
+        account: &Pubkey
+    ) -> Result<PriceFeed> {
+        let account = account.to_string();
+        for price_feed in self.price_feeds.iter() {
+            if price_feed.price_account.eq(&account) {
+                return Ok(price_feed.clone())
+            }
+        }
+        Err(anyhow!("failed to find price feed for {}", account))
     }
 }
 

@@ -28,7 +28,7 @@ impl Service {
         Ok(Arc::new(Self { config, rpc, pool }))
     }
     pub fn start(self: &Arc<Self>, exit_chan: crossbeam_channel::Receiver<bool>) -> Result<()> {
-        let price_feed_map = Arc::new(self.config.analytics.price_feed_map()?);
+        let price_feed_map = Arc::new(self.config.analytics.price_account_map());
         let work_loop = || {
             let scraped_at = Utc::now();
             let wg = WaitGroup::new();
@@ -62,6 +62,7 @@ impl Service {
                         tokio::task::spawn_blocking(move || {
                             info!("initiating price feed scraper");
                             scrapers::price_feeds::scrape_price_feeds(
+                                &service.config,
                                 &service.rpc,
                                 &conn,
                                 &price_feed_map,

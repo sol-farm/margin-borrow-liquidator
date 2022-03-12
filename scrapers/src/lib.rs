@@ -6,4 +6,4 @@
 #![allow(clippy::extra_unused_lifetimes)]
 
 pub mod price_feeds;
-pub mod pyth;
+pub mod lending_obligation;

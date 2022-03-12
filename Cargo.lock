@@ -886,6 +886,7 @@ dependencies = [
  "thiserror",
  "tiny-bip39",
  "tokio",
+ "tulipv2-sdk-common",
 ]
 
 [[package]]
@@ -4958,14 +4959,17 @@ checksum = "b6f4c70c8fe82613e0a32b00a3eab2557ec5dd110bddf471ace19de8fd4577d0"
 
 [[package]]
 name = "tulipv2-sdk-common"
-version = "0.9.0"
+version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f586a8486701a6ddd2a8c6d6ef9d6cd1ce53cfb4529aa8cde322cb0385ca461b"
+checksum = "cae8c11c7ff2cf0f8d1af3b5956749c50ff4517f2769ebf27ec254f575dc316b"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
+ "arrayref",
+ "bytemuck",
  "num-derive",
  "num-traits",
+ "solana-sdk",
  "spl-token",
  "static-pubkey",
  "thiserror",
@@ -4976,9 +4980,9 @@ dependencies = [
 
 [[package]]
 name = "tulipv2-sdk-farms"
-version = "0.9.0"
+version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59bee7a14b57271aca65052cc6c439826a022ee76479733712a4d3b719e5586a"
+checksum = "bae18388040a213892fd508ed093cf8846a0b557fb5662fa5896806861a1ab7e"
 dependencies = [
  "anchor-lang",
  "tulip-arrform",
