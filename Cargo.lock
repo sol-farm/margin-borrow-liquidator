@@ -817,10 +817,12 @@ dependencies = [
 name = "cli"
 version = "0.1.0"
 dependencies = [
+ "analytics",
  "anchor-client",
  "anchor-lang",
  "anyhow",
  "axum 0.3.4",
+ "channels",
  "clap",
  "config",
  "crossbeam",

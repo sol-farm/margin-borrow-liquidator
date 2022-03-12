@@ -6,6 +6,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+analytics = {path = "../analytics"}
 config = {path = "../config" }
 clap = "2.33.3"
 signal-hook = "0.3.9"
@@ -23,6 +24,7 @@ anchor-lang = "0.22.0"
 crossbeam = "0.8"
 crossbeam-utils = "0.8"
 crossbeam-channel = "0.5"
+channels = {path = "../channels"}
 hyper = { version = "0.14", features = ["full"] }
 tower-http = {version = "0.1.1", features = ["full", "trace"]}
 axum = {version = "0.3.0", features = ["headers", "http2"]}

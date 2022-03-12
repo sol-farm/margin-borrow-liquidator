@@ -12,6 +12,8 @@ use log::error;
 use pprof::*;
 mod config;
 mod helpers;
+mod database;
+mod analytics;
 use std::str::FromStr;
 
 const GIT_VERSION: &str = git_version!(args = ["--abbrev=32", "--always"]);
@@ -66,15 +68,7 @@ async fn main() -> Result<()> {
                 .about("configuration management commands")
                 .subcommands(vec![
                 SubCommand::with_name("new")
-                .about("generates a new and empty configuration file")
-                .arg(
-                    Arg::with_name("profile")
-                    .short("p")
-                    .long("profile")
-                    .help("configuration profile to use as a template, defaults to devnet")
-                    .value_name("PROFILE")
-                    .required(false)
-                ),
+                .about("generates a new and empty configuration file"),
                 SubCommand::with_name("sanitize")
                 .about("sanitize configuration to make suitable for public storage"),
                 SubCommand::with_name("export-as-json")
@@ -82,6 +76,22 @@ async fn main() -> Result<()> {
                 SubCommand::with_name("interest-rate")
                 .about("interest rate scraper configuration management")
             ]),
+        )
+        .subcommand(
+            SubCommand::with_name("analytics")
+            .about("analytics management commands")
+            .subcommands(vec![
+                SubCommand::with_name("start-scraper-service")
+                .about("starts the scraper service, which stores price feed and obligation information into the database")
+            ])
+        )
+        .subcommand(
+            SubCommand::with_name("database")
+            .about("database management commands")
+            .subcommands(vec![
+                SubCommand::with_name("migrate")
+                .about("run database migrations")
+            ])
         )
         .get_matches();
     let config_file_path = get_config_or_default(&matches);
@@ -127,6 +137,12 @@ async fn process_matches<'a>(
     config_file_path: String,
 ) -> Result<()> {
     match matches.subcommand() {
+        ("analytics", Some(analytics_command)) => match analytics_command.subcommand() {
+            ("start-scraper-service", Some(start_scraper)) => {
+                analytics::start_scraper_service(start_scraper, config_file_path)
+            }
+            _ => invalid_subcommand("analytics"),
+        }
         ("config", Some(config_command)) => match config_command.subcommand() {
             ("new", Some(new_config)) => config::new_config(new_config, config_file_path),
             ("sanitize", Some(sanitize_config)) => {
@@ -137,6 +153,12 @@ async fn process_matches<'a>(
             }
             _ => invalid_subcommand("config"),
         },
+        ("database", Some(database_command)) => match database_command.subcommand() {
+            ("migrate", Some(_)) => {
+                database::run_database_migrations(config_file_path)
+            }
+            _ => invalid_subcommand("database")
+        }
         _ => invalid_command(),
     }
 }
