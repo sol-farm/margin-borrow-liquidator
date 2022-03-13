@@ -13,3 +13,17 @@ services:
       POSTGRES_DB: "liquidator"
       POSTGRES_USER: "postgres"
       POSTGRES_PASSWORD: "password123"
+  scraper:
+    image: liquidator-cli:latest
+    depends_on:
+      - postgres
+    command: --config /tmp/config.yaml analytics start-scraper-service
+    volumes:
+      - ./config.yaml:/tmp/config.yaml
+  liquidator:
+    image: liquidator-cli:latest
+    depends_on:
+      - postgres
+    command: --config /tmp/config.yaml liquidator start-simple --ltv-filter-mode ge --ltv-filter-value 0.6
+    volumes:
+      - ./config.yaml:/tmp/config.yaml
