@@ -1,4 +1,4 @@
-#![warn(clippy::too_many_arguments)]
+#![allow(clippy::too_many_arguments)]
 
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
