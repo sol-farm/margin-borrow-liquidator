@@ -1,11 +1,11 @@
 //! provides the main liquidator service component, responsible for executing liquidations and collecting bounties.
 //! the "simple" liquidator is a rudimentary liquidator that requires the person running the liquidator to have all required
-//! funds on hand to pay off all required debt. 
+//! funds on hand to pay off all required debt.
 
-use tulipv2_sdk_common::math::{uint::U192, decimal::Decimal};
+use tulipv2_sdk_common::math::{decimal::Decimal, uint::U192};
 
-pub mod simple;
 pub mod instructions;
+pub mod simple;
 
 /// the minimum ltv used as the threshold at which liquidation occurs
 pub const MIN_LTV: Decimal = Decimal(U192([600000000000000000, 0, 0]));

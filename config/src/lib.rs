@@ -216,8 +216,10 @@ mod tests {
     use super::*;
     #[test]
     fn test_sanitize() {
-        let mut config = Configuration::default();
-        config.key_path = "420".to_string();
+        let mut config = Configuration {
+            key_path: "420".to_string(),
+            ..Default::default()
+        };
         config.database.conn_url = "420".to_string();
         config.rpc_endpoints.primary_endpoint.http_url = "420".to_string();
         config.rpc_endpoints.primary_endpoint.ws_url = "420".to_string();

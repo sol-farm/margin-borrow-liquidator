@@ -1,17 +1,12 @@
 extern crate hyper_native_tls;
 
-
 use anyhow::{anyhow, Result};
-use axum::body::Body;
-use axum::http::{self};
-use channels::broadcast::UnboundedBroadcast; 
+
+use channels::broadcast::UnboundedBroadcast;
 use config::Configuration;
-use crossbeam::sync::WaitGroup;
 
-use hyper::Request;
+use log::error;
 
-use log::{error, info};
-use serde_json::Value;
 use signal_hook::{
     consts::{SIGINT, SIGQUIT, SIGTERM},
     iterator::Signals,

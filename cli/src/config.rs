@@ -1,13 +1,10 @@
 use crate::helpers::get_config;
-use anchor_client::solana_sdk::commitment_config::CommitmentConfig;
-use anchor_lang::prelude::Pubkey;
-use anyhow::{anyhow, Result};
+
+use anyhow::Result;
 use config::Configuration;
-use log::{error, info};
-use std::str::FromStr;
-use std::sync::Arc;
+
 #[cfg(not(tarpaulin_include))]
-pub fn new_config(matches: &clap::ArgMatches, config_file_path: String) -> Result<()> {
+pub fn new_config(_matches: &clap::ArgMatches, config_file_path: String) -> Result<()> {
     Configuration::new_config_file(config_file_path.as_str(), false)?;
     Ok(())
 }

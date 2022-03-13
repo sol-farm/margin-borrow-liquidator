@@ -1,7 +1,7 @@
 use anchor_lang::solana_program::pubkey::Pubkey;
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
-use std::{collections::HashMap, str::FromStr, sync::Arc};
+use std::{collections::HashMap, str::FromStr};
 #[remain::sorted]
 #[derive(Clone, Default, Debug, Serialize, Deserialize)]
 /// provides configuration options for the analytics backend
@@ -32,7 +32,6 @@ pub struct PriceFeed {
     pub quote_decimals: i16,
 }
 
-
 #[derive(Default, Clone, Debug, Serialize, Deserialize)]
 pub struct Reserve {
     /// name of the reserve
@@ -40,7 +39,6 @@ pub struct Reserve {
     /// reserve account address
     pub account: String,
 }
-
 
 impl Analytics {
     /// returns a HashMap of price_account -> price_feed_name
@@ -59,28 +57,22 @@ impl Analytics {
         }
         feed_map
     }
-    
+
     /// returns a HashMap of reserve_name -> reserve_account
     pub fn reserve_map(&self) -> HashMap<Pubkey, String> {
         let mut reserve_map = HashMap::with_capacity(self.reserves.len());
         for reserve in self.reserves.iter() {
-            reserve_map.insert(
-                reserve.account(),
-                reserve.name.clone(),
-            );
+            reserve_map.insert(reserve.account(), reserve.name.clone());
         }
         reserve_map
     }
     /// returns a PriceFeed object by searching
     /// for the price account
-    pub fn price_feed_by_account(
-        &self,
-        account: &Pubkey
-    ) -> Result<PriceFeed> {
+    pub fn price_feed_by_account(&self, account: &Pubkey) -> Result<PriceFeed> {
         let account = account.to_string();
         for price_feed in self.price_feeds.iter() {
             if price_feed.price_account.eq(&account) {
-                return Ok(price_feed.clone())
+                return Ok(price_feed.clone());
             }
         }
         Err(anyhow!("failed to find price feed for {}", account))

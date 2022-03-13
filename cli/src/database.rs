@@ -1,7 +1,6 @@
 use config::Configuration;
 
 use anyhow::{anyhow, Result};
-use std::sync::Arc;
 
 #[cfg(not(tarpaulin_include))]
 pub fn run_database_migrations(config_file_path: String) -> Result<()> {

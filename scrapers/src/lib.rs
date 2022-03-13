@@ -5,5 +5,5 @@
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::extra_unused_lifetimes)]
 
-pub mod price_feeds;
 pub mod lending_obligation;
+pub mod price_feeds;

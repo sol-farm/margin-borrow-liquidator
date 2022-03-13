@@ -1,4 +1,3 @@
-use anchor_lang::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[remain::sorted]

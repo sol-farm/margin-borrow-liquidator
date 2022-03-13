@@ -1,28 +1,38 @@
-use crate::MIN_LTV;
-use tulipv2_sdk_common::math::decimal::Decimal;
 use super::*;
+use crate::MIN_LTV;
 use db::models::Obligation;
-use solana_sdk::{program_pack::Pack, instruction::Instruction, transaction::Transaction};
-use tulipv2_sdk_common::lending::{reserve::Reserve, lending_obligation::{LendingObligation, pseudo_refresh_lending_obligation}};
-use std::{str::FromStr, cmp::Ordering};
+use solana_sdk::{program_pack::Pack, transaction::Transaction};
+use std::{cmp::Ordering, str::FromStr};
+use tulipv2_sdk_common::lending::{
+    lending_obligation::{pseudo_refresh_lending_obligation, LendingObligation},
+    reserve::Reserve,
+};
+use tulipv2_sdk_common::math::decimal::Decimal;
 impl SimpleLiquidator {
-    pub fn handle_liquidation_check(
-        self: &Arc<Self>,
-        obligation: &Obligation,
-    ) -> Result<()> {
+    pub fn handle_liquidation_check(self: &Arc<Self>, obligation: &Obligation) -> Result<()> {
         let payer = self.cfg.payer_signer(None)?;
         let payer_pubkey = payer.pubkey();
         let obligation_key = Pubkey::from_str(&obligation.account)?;
         let obligation_account_data = self.rpc.get_account_data(&obligation_key)?;
-        let mut obligation_account = LendingObligation::unpack_unchecked(&obligation_account_data[..])?;
-        
+        let mut obligation_account =
+            LendingObligation::unpack_unchecked(&obligation_account_data[..])?;
+
         // contains all reserves used as collateral
-        let liquidity_reserves: Vec<Pubkey> = obligation_account.deposits.iter().map(|deposit| deposit.deposit_reserve).collect();
+        let liquidity_reserves: Vec<Pubkey> = obligation_account
+            .deposits
+            .iter()
+            .map(|deposit| deposit.deposit_reserve)
+            .collect();
         // contains all reserves which were used to borrow liquidity
-        let borrow_reserves: Vec<Pubkey> = obligation_account.borrows.iter().map(|borrow| borrow.borrow_reserve).collect();
-        
+        let borrow_reserves: Vec<Pubkey> = obligation_account
+            .borrows
+            .iter()
+            .map(|borrow| borrow.borrow_reserve)
+            .collect();
+
         // contains all reserves, deduped
-        let mut reserve_accounts = Vec::with_capacity(liquidity_reserves.len() + borrow_reserves.len());
+        let mut reserve_accounts =
+            Vec::with_capacity(liquidity_reserves.len() + borrow_reserves.len());
         reserve_accounts.extend_from_slice(&liquidity_reserves[..]);
         reserve_accounts.extend_from_slice(&borrow_reserves[..]);
         reserve_accounts.sort_unstable();
@@ -31,13 +41,19 @@ impl SimpleLiquidator {
         // fetch all reserve accounts in bulk
         let mut reserve_account_infos = match self.rpc.get_multiple_accounts_with_config(
             &reserve_accounts[..],
-            solana_client::rpc_config::RpcAccountInfoConfig { 
+            solana_client::rpc_config::RpcAccountInfoConfig {
                 encoding: Some(UiAccountEncoding::Base64Zstd),
                 ..Default::default()
             },
         ) {
             Ok(response) => response.value,
-            Err(err) => return Err(anyhow!("failed to fetch reserves for {}: {:#?}", obligation.account, err)),
+            Err(err) => {
+                return Err(anyhow!(
+                    "failed to fetch reserves for {}: {:#?}",
+                    obligation.account,
+                    err
+                ))
+            }
         };
 
         // create a hashmap indexing all reserves by their reserve account address
@@ -51,7 +67,7 @@ impl SimpleLiquidator {
                     Err(err) => {
                         error!("failed to unpack reserve {:#?}", err);
                         continue;
-                    },
+                    }
                 }
             } else {
                 error!("found None reserve");
@@ -61,8 +77,12 @@ impl SimpleLiquidator {
 
         // perform a pseudo reserve refresh to estiamte the current ltv
         if let Err(err) = pseudo_refresh_lending_obligation(&mut obligation_account, &reserves) {
-            return Err(anyhow!("pseudo refresh failed for {}: {:#?}", obligation_key, err));
-        }; 
+            return Err(anyhow!(
+                "pseudo refresh failed for {}: {:#?}",
+                obligation_key,
+                err
+            ));
+        };
 
         // check the current ltv to see if we need to liquidate
         let ltv = obligation_account.loan_to_value()?;
@@ -102,21 +122,25 @@ impl SimpleLiquidator {
                 }
             };
 
-            let source_liquidity_token_account = spl_associated_token_account::get_associated_token_address(
-                &payer_pubkey,
-                &borrow_reserve.liquidity.mint_pubkey,
-            );
+            let source_liquidity_token_account =
+                spl_associated_token_account::get_associated_token_address(
+                    &payer_pubkey,
+                    &borrow_reserve.liquidity.mint_pubkey,
+                );
 
             // use the available balance as the amount to repay if less than borrowed value,
             // otherwise if greater use u64::MAX
-            let liquidity_balance = match self.rpc.get_token_account_balance(&source_liquidity_token_account) {
+            let liquidity_balance = match self
+                .rpc
+                .get_token_account_balance(&source_liquidity_token_account)
+            {
                 Ok(balance) => match u64::from_str(&balance.amount) {
                     Ok(amount) => Decimal::from(amount),
                     Err(err) => {
                         error!("failed to fetch token account balance {:#?}", err);
                         continue;
                     }
-                }
+                },
                 Err(err) => {
                     error!("failed to fetch token account balance {:#?}", err);
                     continue;
@@ -157,33 +181,32 @@ impl SimpleLiquidator {
             liq_instructions.push(crate::instructions::new_refresh_lending_obligation_ix(
                 obligation_key,
                 &liquidity_reserves[..],
-                &borrow_reserves[..]
+                &borrow_reserves[..],
             ));
-            liq_instructions.push(
-                crate::instructions::new_liquidate_lending_obligation_ix(
-                    spl_associated_token_account::get_associated_token_address(
+            liq_instructions.push(crate::instructions::new_liquidate_lending_obligation_ix(
+                spl_associated_token_account::get_associated_token_address(
                     &payer_pubkey,
                     &borrow_reserve.liquidity.mint_pubkey,
-                    ),
-                    spl_associated_token_account::get_associated_token_address(
-                        &payer_pubkey,
-                        &deposit_reserve.liquidity.mint_pubkey,
-                    ),
-                    borrow.borrow_reserve,
-                    borrow_reserve.liquidity.supply_pubkey,
-                    deposit.deposit_reserve,
-                    deposit_reserve.liquidity.supply_pubkey,
-                    obligation_key,
-                    borrow_reserve.lending_market,
-                    Pubkey::find_program_address(&[borrow_reserve.lending_market.as_ref()], &crate::instructions::LENDING_PROGRAM_ID).0,
-                    payer_pubkey,
-                    amount_to_repay,
                 ),
-            );
-            let mut tx = Transaction::new_with_payer(
-                &liq_instructions[..],
-                Some(&payer_pubkey)
-            );
+                spl_associated_token_account::get_associated_token_address(
+                    &payer_pubkey,
+                    &deposit_reserve.liquidity.mint_pubkey,
+                ),
+                borrow.borrow_reserve,
+                borrow_reserve.liquidity.supply_pubkey,
+                deposit.deposit_reserve,
+                deposit_reserve.liquidity.supply_pubkey,
+                obligation_key,
+                borrow_reserve.lending_market,
+                Pubkey::find_program_address(
+                    &[borrow_reserve.lending_market.as_ref()],
+                    &crate::instructions::LENDING_PROGRAM_ID,
+                )
+                .0,
+                payer_pubkey,
+                amount_to_repay,
+            ));
+            let mut tx = Transaction::new_with_payer(&liq_instructions[..], Some(&payer_pubkey));
             let blockhash = self.rpc.get_latest_blockhash()?;
             tx.sign(&vec![&*payer], blockhash);
             info!(

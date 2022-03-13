@@ -1,12 +1,12 @@
+use super::*;
 use crate::helpers::get_config;
 use signal_hook::{
     consts::{SIGINT, SIGQUIT, SIGTERM},
     iterator::Signals,
 };
-use super::*;
 
 use channels::broadcast::UnboundedBroadcast;
-use liquidator;
+
 use std::sync::Arc;
 
 pub fn start_simple(matches: &clap::ArgMatches, config_file_path: String) -> Result<()> {
@@ -30,6 +30,6 @@ pub fn start_simple(matches: &clap::ArgMatches, config_file_path: String) -> Res
             }
         });
     }
-    
+
     simple_liquidator.start(ltv_filter, subscriber)
 }

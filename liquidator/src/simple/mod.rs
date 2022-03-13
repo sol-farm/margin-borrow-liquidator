@@ -2,31 +2,24 @@
 
 pub mod handler;
 
-use chrono::{DateTime, Utc};
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
 use config::Configuration;
-use diesel::PgConnection;
-use diesel::r2d2;
-use log::{info, warn, error};
-use crossbeam::{select, sync::WaitGroup};
+use crossbeam::select;
 use crossbeam_channel::tick;
+use diesel::r2d2;
+use diesel::PgConnection;
+use log::{error, info, warn};
 
-use config::analytics::PriceFeed;
-use diesel::Connection;
-use rayon::ThreadBuilder;
 use rayon::ThreadPoolBuilder;
 use solana_account_decoder::UiAccountEncoding;
-use solana_client::{rpc_client::RpcClient, rpc_config::RpcAccountInfoConfig};
+use solana_client::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
 use std::collections::HashMap;
-use std::str::FromStr;
-use tulipv2_sdk_common::pyth;
+
+use db::filters::{LtvFilter, ObligationMatcher};
 use std::sync::Arc;
-use db::filters::{ObligationMatcher, LtvFilter};
 
 use rayon::prelude::*;
-
-
 
 pub struct Obligation {
     pub ltv: f64,
@@ -40,9 +33,7 @@ pub struct SimpleLiquidator {
 }
 
 impl SimpleLiquidator {
-    pub fn new(
-        cfg: Arc<Configuration>,
-    ) -> Result<Arc<SimpleLiquidator>> {
+    pub fn new(cfg: Arc<Configuration>) -> Result<Arc<SimpleLiquidator>> {
         let pool = db::new_connection_pool(cfg.database.conn_url.clone(), cfg.database.pool_size)?;
         let rpc = cfg.get_rpc_client(false, None);
         Ok(Arc::new(SimpleLiquidator {
@@ -56,9 +47,9 @@ impl SimpleLiquidator {
         ltv_filter: LtvFilter,
         exit_chan: crossbeam_channel::Receiver<bool>,
     ) -> Result<()> {
-        let pool = ThreadPoolBuilder::new().num_threads(
-            self.cfg.liquidator.max_concurrency as usize
-        ).build()?;
+        let pool = ThreadPoolBuilder::new()
+            .num_threads(self.cfg.liquidator.max_concurrency as usize)
+            .build()?;
         let conn = self.pool.get()?;
         let ticker = tick(std::time::Duration::from_secs(
             self.cfg.liquidator.frequency,
@@ -84,7 +75,7 @@ impl SimpleLiquidator {
                             match service.handle_liquidation_check(&obligation) {
                                 Ok(_) => (),
                                 Err(err) => error!(
-                                    "liquidation for obligation {} failed: {:#?}", 
+                                    "liquidation for obligation {} failed: {:#?}",
                                     obligation.account, err,
                                 ),
                             };

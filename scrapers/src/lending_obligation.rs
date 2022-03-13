@@ -1,20 +1,21 @@
 use chrono::{DateTime, Utc};
 
+use config::Configuration;
 use diesel::PgConnection;
 use log::error;
-use config::Configuration;
-use config::analytics::PriceFeed;
-use diesel::Connection;
+
 use solana_account_decoder::UiAccountEncoding;
 use solana_client::rpc_filter::RpcFilterType;
 use solana_client::{rpc_client::RpcClient, rpc_config::RpcAccountInfoConfig};
 use solana_sdk::program_pack::Pack;
 use solana_sdk::pubkey::Pubkey;
+use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::str::FromStr;
-use tulipv2_sdk_common::lending::lending_obligation::{LendingObligation, pseudo_refresh_lending_obligation};
 use std::sync::Arc;
-use std::borrow::Borrow;
+use tulipv2_sdk_common::lending::lending_obligation::{
+    pseudo_refresh_lending_obligation, LendingObligation,
+};
 pub const LENDING_OBLIGATION_SIZE: usize = LendingObligation::LEN;
 
 pub fn scrape_lending_obligations(
@@ -23,9 +24,8 @@ pub fn scrape_lending_obligations(
     conn: &PgConnection,
     reserve_map: &Arc<HashMap<Pubkey, String>>,
     scraped_at: DateTime<Utc>,
-)  {
-
-    let reserve_account_map = match config.get_reserve_infos(rpc, &reserve_map) {
+) {
+    let reserve_account_map = match config.get_reserve_infos(rpc, reserve_map) {
         Ok(reserve_account_map) => reserve_account_map,
         Err(err) => {
             error!("failed to load reserve accounts {:#?}", err);
@@ -35,14 +35,14 @@ pub fn scrape_lending_obligations(
 
     let accounts = match rpc.get_program_accounts_with_config(
         &config.programs.lending_id(),
-        solana_client::rpc_config::RpcProgramAccountsConfig { 
-            filters: Some(vec![
-                RpcFilterType::DataSize(LENDING_OBLIGATION_SIZE as u64),
-            ]),
-            account_config: RpcAccountInfoConfig { 
-                encoding: Some(UiAccountEncoding::Base64Zstd), 
+        solana_client::rpc_config::RpcProgramAccountsConfig {
+            filters: Some(vec![RpcFilterType::DataSize(
+                LENDING_OBLIGATION_SIZE as u64,
+            )]),
+            account_config: RpcAccountInfoConfig {
+                encoding: Some(UiAccountEncoding::Base64Zstd),
                 ..Default::default()
-            }, 
+            },
             ..Default::default()
         },
     ) {
@@ -58,17 +58,20 @@ pub fn scrape_lending_obligations(
         let mut lending_obligation = match LendingObligation::unpack_unchecked(account_data) {
             Ok(acct) => acct,
             Err(err) => {
-                error!("failed to unpack lending obligation {}: {:#?}", account.0, err);
+                error!(
+                    "failed to unpack lending obligation {}: {:#?}",
+                    account.0, err
+                );
                 continue;
             }
         };
-        match pseudo_refresh_lending_obligation(
-            &mut lending_obligation,
-             &reserve_account_map,
-        ) {
+        match pseudo_refresh_lending_obligation(&mut lending_obligation, &reserve_account_map) {
             Ok(_) => (),
             Err(err) => {
-                error!("failed to pseudo refresh obligation {}: {:#?}",  account.0, err);
+                error!(
+                    "failed to pseudo refresh obligation {}: {:#?}",
+                    account.0, err
+                );
             }
         }
         let ltv = match lending_obligation.loan_to_value() {
@@ -86,11 +89,11 @@ pub fn scrape_lending_obligations(
             }
         };
         match db::client::put_obligation(
-            &conn,
+            conn,
             ltv,
             &account.0.to_string(),
             account_data,
-            scraped_at
+            scraped_at,
         ) {
             Ok(_) => (),
             Err(err) => {

@@ -9,11 +9,11 @@ use anyhow::{anyhow, Result};
 use clap::{App, Arg, SubCommand};
 use git_version::git_version;
 use log::error;
-use pprof::*;
-mod config;
-mod helpers;
-mod database;
+
 mod analytics;
+mod config;
+mod database;
+mod helpers;
 mod liq_bot;
 use std::str::FromStr;
 
@@ -24,7 +24,7 @@ const GIT_VERSION: &str = git_version!(args = ["--abbrev=32", "--always"]);
 async fn main() -> Result<()> {
     use std::fs::File;
 
-    let skip_preflight_flag = Arg::with_name("skip-preflight")
+    let _skip_preflight_flag = Arg::with_name("skip-preflight")
         .long("skip-preflight")
         .help("if present skip preflight checks")
         .required(false);
@@ -38,12 +38,11 @@ async fn main() -> Result<()> {
     .value_name("MODE");
 
     let ltv_filter_value = Arg::with_name("ltv-filter-value")
-    .short("lfv")
-    .help("the ltv value to use for filtering, where 1.0 is 100% and 0.6 is 60%")
-    .required(true)
-    .takes_value(true)
-    .value_name("LTV");
-
+        .short("lfv")
+        .help("the ltv value to use for filtering, where 1.0 is 100% and 0.6 is 60%")
+        .required(true)
+        .takes_value(true)
+        .value_name("LTV");
 
     let matches = App::new("tulip-cli")
         .version("0.0.1")
@@ -169,7 +168,7 @@ async fn process_matches<'a>(
                 analytics::start_scraper_service(start_scraper, config_file_path)
             }
             _ => invalid_subcommand("analytics"),
-        }
+        },
         ("config", Some(config_command)) => match config_command.subcommand() {
             ("new", Some(new_config)) => config::new_config(new_config, config_file_path),
             ("sanitize", Some(sanitize_config)) => {
@@ -181,17 +180,13 @@ async fn process_matches<'a>(
             _ => invalid_subcommand("config"),
         },
         ("database", Some(database_command)) => match database_command.subcommand() {
-            ("migrate", Some(_)) => {
-                database::run_database_migrations(config_file_path)
-            }
-            _ => invalid_subcommand("database")
-        }
+            ("migrate", Some(_)) => database::run_database_migrations(config_file_path),
+            _ => invalid_subcommand("database"),
+        },
         ("liquidator", Some(liquidator_command)) => match liquidator_command.subcommand() {
-            ("start-simple", Some(start)) => {
-                liq_bot::start_simple(start, config_file_path)
-            }
+            ("start-simple", Some(start)) => liq_bot::start_simple(start, config_file_path),
             _ => invalid_subcommand("liquidator"),
-        }
+        },
         _ => invalid_command(),
     }
 }

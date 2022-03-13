@@ -1,19 +1,14 @@
-use crate::filters::{
-    FindObligation, FindPriceFeed, LtvFilter, ObligationMatcher, PriceFeedMatcher,
-};
+use crate::filters::{LtvFilter, ObligationMatcher, PriceFeedMatcher};
 use crate::models::{Obligation, PriceFeed};
 use crate::schema::*;
-use anyhow::{anyhow, Result};
-use arrform::{arrform, ArrForm};
-use chrono::{prelude::*, Duration};
+use anyhow::Result;
+
+use chrono::prelude::*;
 
 use diesel::PgConnection;
 use diesel::*;
 use diesel_derives_traits::{Model, NewModel};
 use into_query::IntoQuery;
-use log::{error, info, warn};
-use std::convert::TryInto;
-use std::sync::Arc;
 
 #[derive(Debug, Insertable, NewModel)]
 #[table_name = "obligations"]
