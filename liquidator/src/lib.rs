@@ -3,3 +3,4 @@
 //! funds on hand to pay off all required debt. 
 
 pub mod simple;
+pub mod instructions;
