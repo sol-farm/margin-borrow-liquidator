@@ -55,7 +55,7 @@ impl SimpleLiquidator {
         loop {
             select! {
                 recv(ticker) -> _msg => {
-                    let obligations = match db::client::get_obligation(
+                    let mut obligations = match db::client::get_obligation(
                         &conn,
                         &ObligationMatcher::All,
                         Some(ltv_filter)
@@ -66,6 +66,11 @@ impl SimpleLiquidator {
                             continue;
                         }
                     };
+                    
+                    // sort obligations by ltv so we're liquidating the most 
+                    // unhealthy positions first
+                    obligations.sort_unstable_by_key(|obligation| obligation.ltv);
+
                     for obligation in obligations {
                         let service = Arc::clone(self);
                         let obligation = obligation.clone();
