@@ -25,7 +25,6 @@ test-cargo:
 
 .PHONY: build-docker
 build-docker:
-	cp -r ~/.ssh ssh
 	DOCKER_BUILDKIT=1 docker \
 		build \
 		--memory 8g \
@@ -33,8 +32,8 @@ build-docker:
 		--shm-size 8g \
 		-t tulip-cli:latest \
 		--squash .
-	docker image save tulip-liquidator:latest -o tulip_liquidator.tar
-	pigz -f -9 tulip_liquidator.tar
+	docker image save liquidator-cli:latest -o liquidator_cli.tar
+	pigz -f -9 liquidator_cli.tar
 
 .PHONY: build-cli
 build-cli:
