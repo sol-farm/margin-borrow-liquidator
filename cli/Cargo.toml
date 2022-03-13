@@ -37,3 +37,4 @@ solana-account-decoder = "1.9.1"
 solana-transaction-status = "1.9.1"
 dirs = "4.0.0"
 pprof = { version = "0.6.2", features = ["flamegraph"] }
+liquidator = {path ="../liquidator"}

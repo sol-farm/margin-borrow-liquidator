@@ -1,4 +1,7 @@
+use anyhow::{Result, anyhow};
 use into_query::IntoQuery;
+use std::convert::TryFrom;
+use std::str::FromStr;
 
 #[derive(IntoQuery, Default)]
 #[table_name = "obligations"]
@@ -71,4 +74,29 @@ pub enum LtvFilter {
     GT(f64),
     /// filters obligations with an ltv less than the given value
     LT(f64),
+}
+
+
+impl LtvFilter {
+    pub fn from_str(
+        mode: &str,
+        value: &str,
+    ) -> Result<LtvFilter> {
+        let value = f64::from_str(value)?;
+        match mode.to_ascii_lowercase().as_str() {
+            "ge" => {
+                Ok(LtvFilter::GE(value))
+            },
+            "le" => {
+                Ok(LtvFilter::LE(value))
+            },
+            "gt" => {
+                Ok(LtvFilter::GT(value))
+            },
+            "lt" => {
+                Ok(LtvFilter::LT(value))
+            }
+            _ => Err(anyhow!("invalid ltv filter mode {}", mode)),
+        }
+    }
 }

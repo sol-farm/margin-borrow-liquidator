@@ -14,6 +14,7 @@ mod config;
 mod helpers;
 mod database;
 mod analytics;
+mod liq_bot;
 use std::str::FromStr;
 
 const GIT_VERSION: &str = git_version!(args = ["--abbrev=32", "--always"]);
@@ -27,6 +28,22 @@ async fn main() -> Result<()> {
         .long("skip-preflight")
         .help("if present skip preflight checks")
         .required(false);
+
+    let ltv_filter_mode = Arg::with_name("ltv-filter-mode")
+    .short("lfm")
+    .help("the filter mode to use: ge, le, gt, lt")
+    .long_help("specifies whether or not to get greater/less than or equal to, greater than, or less than filtering of obligations based on their ltv")
+    .required(true)
+    .takes_value(true)
+    .value_name("MODE");
+
+    let ltv_filter_value = Arg::with_name("ltv-filter-value")
+    .short("lfv")
+    .help("the ltv value to use for filtering, where 1.0 is 100% and 0.6 is 60%")
+    .required(true)
+    .takes_value(true)
+    .value_name("LTV");
+
 
     let matches = App::new("tulip-cli")
         .version("0.0.1")
@@ -91,6 +108,16 @@ async fn main() -> Result<()> {
             .subcommands(vec![
                 SubCommand::with_name("migrate")
                 .about("run database migrations")
+            ])
+        )
+        .subcommand(
+            SubCommand::with_name("liquidator")
+            .about("liquidator bot management commands")
+            .subcommands(vec![
+                SubCommand::with_name("start-simple")
+                .about("starts the simple liquidator bot")
+                .arg(ltv_filter_mode)
+                .arg(ltv_filter_value)
             ])
         )
         .get_matches();
@@ -158,6 +185,12 @@ async fn process_matches<'a>(
                 database::run_database_migrations(config_file_path)
             }
             _ => invalid_subcommand("database")
+        }
+        ("liquidator", Some(liquidator_command)) => match liquidator_command.subcommand() {
+            ("start-simple", Some(start)) => {
+                liq_bot::start_simple(start, config_file_path)
+            }
+            _ => invalid_subcommand("liquidator"),
         }
         _ => invalid_command(),
     }
