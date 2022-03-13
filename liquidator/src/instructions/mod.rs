@@ -54,7 +54,8 @@ pub fn new_refresh_reserve_ix(
 /// is the reserve for the collateral which was deposited.
 /// 
 /// the amount specified is the amount of borrowed liquidity to repay with
-/// u64::MAX indicating to repay 100% of the borrowed amount.
+/// u64::MAX indicating to repay 100% of the borrowed amount. you may only close out
+/// up to 20% of a given positions unhealthy debt, which is automatically enforced onchain
 pub fn new_liquidate_lending_obligation_ix(
     source_liquidity_token_account: Pubkey,
     destination_collateral_token_account: Pubkey,
