@@ -31,12 +31,12 @@ use rayon::prelude::*;
 pub struct Obligation {
     pub ltv: f64,
     pub account: String,
-    pub account_data: Vec<u8>,
 }
 
 pub struct SimpleLiquidator {
     pub cfg: Arc<Configuration>,
     pub pool: r2d2::Pool<r2d2::ConnectionManager<PgConnection>>,
+    pub rpc: Arc<RpcClient>,
 }
 
 impl SimpleLiquidator {
@@ -44,9 +44,11 @@ impl SimpleLiquidator {
         cfg: Arc<Configuration>,
     ) -> Result<Arc<SimpleLiquidator>> {
         let pool = db::new_connection_pool(cfg.database.conn_url.clone(), cfg.database.pool_size)?;
+        let rpc = cfg.get_rpc_client(false, None);
         Ok(Arc::new(SimpleLiquidator {
             cfg,
             pool,
+            rpc: Arc::new(rpc),
         }))
     }
     pub fn start(

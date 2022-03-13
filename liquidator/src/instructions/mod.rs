@@ -4,13 +4,13 @@ use anchor_lang::solana_program;
 use anchor_lang::solana_program::sysvar;
 use static_pubkey::static_pubkey;
 
-const LENDING_PROGRAM_ID: Pubkey = static_pubkey!("4bcFeLv4nydFrsZqV5CgwCVrPhkQKsXtzfy2KyMz7ozM");
+pub const LENDING_PROGRAM_ID: Pubkey = static_pubkey!("4bcFeLv4nydFrsZqV5CgwCVrPhkQKsXtzfy2KyMz7ozM");
 
 /// returns a new instruction used to refresh the given lending obligation
 pub fn new_refresh_lending_obligation_ix(
     obligation: Pubkey,
-    collateral_deposit_reserves: Vec<Pubkey>,
-    liquidity_borrow_reserves: Vec<Pubkey>,
+    collateral_deposit_reserves: &[Pubkey],
+    liquidity_borrow_reserves: &[Pubkey],
 ) -> Instruction {
     let mut collateral_deposit_reserves: Vec<AccountMeta> = collateral_deposit_reserves.iter().map(
         |deposit| AccountMeta::new_readonly(*deposit, false),
