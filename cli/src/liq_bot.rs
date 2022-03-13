@@ -33,3 +33,25 @@ pub fn start_simple(matches: &clap::ArgMatches, config_file_path: String) -> Res
 
     simple_liquidator.start(ltv_filter, subscriber)
 }
+
+pub fn start_refresher(matches: &clap::ArgMatches, config_file_path: String) -> Result<()> {
+    let cfg = Arc::new(get_config(&config_file_path)?);
+    let simple_liquidator = liquidator::refresher::Refresher::new(cfg)?;
+
+    let mut broadcaster: UnboundedBroadcast<bool> = channels::broadcast::UnboundedBroadcast::new();
+    let subscriber = broadcaster.subscribe();
+    let mut signals =
+        Signals::new(vec![SIGINT, SIGTERM, SIGQUIT]).expect("failed to registers signals");
+    {
+        tokio::task::spawn_blocking(move || {
+            if let Some(sig) = signals.forever().next() {
+                error!("caught signal {:#?}", sig);
+            }
+            if let Err(err) = broadcaster.send(true) {
+                error!("failed to send exit signal: {:#?}", err);
+            }
+        });
+    }
+
+    simple_liquidator.start(subscriber)
+}

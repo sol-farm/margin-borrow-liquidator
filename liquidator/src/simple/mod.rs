@@ -66,11 +66,6 @@ impl SimpleLiquidator {
                             continue;
                         }
                     };
-                    
-                    // sort obligations by ltv so we're liquidating the most 
-                    // unhealthy positions first
-                    obligations.sort_unstable_by_key(|obligation| obligation.ltv);
-
                     for obligation in obligations {
                         let service = Arc::clone(self);
                         let obligation = obligation.clone();

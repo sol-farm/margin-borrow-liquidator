@@ -27,3 +27,10 @@ services:
     command: --config /tmp/config.yaml liquidator start-simple --ltv-filter-mode ge --ltv-filter-value 0.6
     volumes:
       - ./config.yaml:/tmp/config.yaml
+  refresher:
+    image: liquidator-cli:latest
+    depends_on:
+      - postgres
+    command: --config /tmp/config.yaml liquidator start-refresher
+    volumes:
+      - ./config.yaml:/tmp/config.yaml

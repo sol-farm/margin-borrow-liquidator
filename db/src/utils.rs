@@ -12,7 +12,6 @@ impl Default for Obligation {
             id: 0,
             ltv: 0_f64,
             account: String::default(),
-            account_data: vec![],
             scraped_at: *CURRENT_TIME,
         }
     }

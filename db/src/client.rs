@@ -16,7 +16,6 @@ use into_query::IntoQuery;
 pub struct NewObligation {
     pub ltv: f64,
     pub account: String,
-    pub account_data: Vec<u8>,
     pub scraped_at: DateTime<Utc>,
 }
 
@@ -92,7 +91,6 @@ pub fn put_obligation(
     conn: &PgConnection,
     ltv: f64,
     account: &str,
-    account_data: &[u8],
     scraped_at: DateTime<Utc>,
 ) -> Result<()> {
     conn.transaction(|| {
@@ -106,13 +104,11 @@ pub fn put_obligation(
             NewObligation {
                 ltv,
                 account: account.to_string(),
-                account_data: account_data.to_vec(),
                 scraped_at,
             }
             .save(conn)?;
         } else {
             let mut obligation = std::mem::take(&mut results[0]);
-            obligation.account_data = account_data.to_vec();
             obligation.ltv = ltv;
             obligation.save(conn)?;
         }
@@ -435,14 +431,7 @@ mod test {
 
         // test first update to an account, creating the record
         {
-            put_obligation(
-                &conn,
-                ltv_one,
-                account_one,
-                &account_data_one[..],
-                scraped_at_one,
-            )
-            .unwrap();
+            put_obligation(&conn, ltv_one, account_one, scraped_at_one).unwrap();
 
             let results = get_obligation(&conn, &ObligationMatcher::All, None).unwrap();
             assert_eq!(results.len(), 1);
@@ -455,22 +444,13 @@ mod test {
             assert_eq!(results.len(), 1);
             assert_eq!(results[0].ltv, ltv_one);
             assert_eq!(results[0].account.to_string(), account_one.to_string());
-            assert_eq!(results[0].account_data, account_data_one);
             assert_eq!(results[0].scraped_at.hour(), scraped_at_one.hour());
             assert_eq!(results[0].scraped_at.minute(), scraped_at_one.minute());
             assert_eq!(results[0].scraped_at.second(), scraped_at_one.second());
         }
         // test second update to an account, updating the record
         {
-            let new_account_data = "696969".as_bytes().to_vec();
-            put_obligation(
-                &conn,
-                ltv_one,
-                account_one,
-                &new_account_data[..],
-                scraped_at_one,
-            )
-            .unwrap();
+            put_obligation(&conn, ltv_one, account_one, scraped_at_one).unwrap();
 
             let results = get_obligation(&conn, &ObligationMatcher::All, None).unwrap();
             assert_eq!(results.len(), 1);
@@ -483,21 +463,13 @@ mod test {
             assert_eq!(results.len(), 1);
             assert_eq!(results[0].ltv, ltv_one);
             assert_eq!(results[0].account.to_string(), account_one.to_string());
-            assert_eq!(results[0].account_data, new_account_data);
             assert_eq!(results[0].scraped_at.hour(), scraped_at_one.hour());
             assert_eq!(results[0].scraped_at.minute(), scraped_at_one.minute());
             assert_eq!(results[0].scraped_at.second(), scraped_at_one.second());
         }
         // test a new obligation
         {
-            put_obligation(
-                &conn,
-                ltv_two,
-                account_two,
-                &account_data_two[..],
-                scraped_at_two,
-            )
-            .unwrap();
+            put_obligation(&conn, ltv_two, account_two, scraped_at_two).unwrap();
 
             let results = get_obligation(&conn, &ObligationMatcher::All, None).unwrap();
             assert_eq!(results.len(), 2);
@@ -510,22 +482,13 @@ mod test {
             assert_eq!(results.len(), 1);
             assert_eq!(results[0].ltv, ltv_two);
             assert_eq!(results[0].account.to_string(), account_two.to_string());
-            assert_eq!(results[0].account_data, account_data_two);
             assert_eq!(results[0].scraped_at.hour(), scraped_at_two.hour());
             assert_eq!(results[0].scraped_at.minute(), scraped_at_two.minute());
             assert_eq!(results[0].scraped_at.second(), scraped_at_two.second());
         }
         // test updating a new obligation
         {
-            let new_account_data_two = "496929123123".as_bytes().to_vec();
-            put_obligation(
-                &conn,
-                ltv_two,
-                account_two,
-                &new_account_data_two[..],
-                scraped_at_two,
-            )
-            .unwrap();
+            put_obligation(&conn, ltv_two, account_two, scraped_at_two).unwrap();
 
             let results = get_obligation(&conn, &ObligationMatcher::All, None).unwrap();
             assert_eq!(results.len(), 2);
@@ -538,7 +501,6 @@ mod test {
             assert_eq!(results.len(), 1);
             assert_eq!(results[0].ltv, ltv_two);
             assert_eq!(results[0].account.to_string(), account_two.to_string());
-            assert_eq!(results[0].account_data, new_account_data_two);
             assert_eq!(results[0].scraped_at.hour(), scraped_at_two.hour());
             assert_eq!(results[0].scraped_at.minute(), scraped_at_two.minute());
             assert_eq!(results[0].scraped_at.second(), scraped_at_two.second());
@@ -582,38 +544,10 @@ mod test {
         let account_four = "account-4";
         let account_data_four = "85".as_bytes().to_vec();
 
-        put_obligation(
-            &conn,
-            ltv_one,
-            account_one,
-            &account_data_one[..],
-            scraped_at_one,
-        )
-        .unwrap();
-        put_obligation(
-            &conn,
-            ltv_two,
-            account_two,
-            &account_data_two[..],
-            scraped_at_one,
-        )
-        .unwrap();
-        put_obligation(
-            &conn,
-            ltv_three,
-            account_three,
-            &account_data_three[..],
-            scraped_at_one,
-        )
-        .unwrap();
-        put_obligation(
-            &conn,
-            ltv_four,
-            account_four,
-            &account_data_four[..],
-            scraped_at_one,
-        )
-        .unwrap();
+        put_obligation(&conn, ltv_one, account_one, scraped_at_one).unwrap();
+        put_obligation(&conn, ltv_two, account_two, scraped_at_one).unwrap();
+        put_obligation(&conn, ltv_three, account_three, scraped_at_one).unwrap();
+        put_obligation(&conn, ltv_four, account_four, scraped_at_one).unwrap();
 
         let results =
             get_obligation(&conn, &ObligationMatcher::All, Some(LtvFilter::GE(0.70))).unwrap();

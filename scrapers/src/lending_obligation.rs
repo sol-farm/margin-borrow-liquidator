@@ -88,13 +88,7 @@ pub fn scrape_lending_obligations(
                 continue;
             }
         };
-        match db::client::put_obligation(
-            conn,
-            ltv,
-            &account.0.to_string(),
-            account_data,
-            scraped_at,
-        ) {
+        match db::client::put_obligation(conn, ltv, &account.0.to_string(), scraped_at) {
             Ok(_) => (),
             Err(err) => {
                 error!("failed to put obligation update {}: {:#?}", account.0, err);

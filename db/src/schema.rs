@@ -5,7 +5,6 @@ table! {
         id -> Int8,
         ltv -> Float8,
         account -> Varchar,
-        account_data -> Bytea,
         scraped_at -> Timestamptz,
     }
 }

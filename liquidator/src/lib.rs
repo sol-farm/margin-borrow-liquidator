@@ -5,6 +5,7 @@
 use tulipv2_sdk_common::math::{decimal::Decimal, uint::U192};
 
 pub mod instructions;
+pub mod refresher;
 pub mod simple;
 
 /// the minimum ltv used as the threshold at which liquidation occurs

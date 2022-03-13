@@ -6,11 +6,13 @@ pub mod analytics;
 pub mod database;
 pub mod liquidator;
 pub mod programs;
+pub mod refresher;
 pub mod rpcs;
 pub mod telemetry;
 pub mod utils;
 
 use liquidator::Liquidator;
+use refresher::Refresher;
 use telemetry::Telemetry;
 
 use crate::{
@@ -44,6 +46,7 @@ pub struct Configuration {
     pub liquidator: Liquidator,
     pub log_file: String,
     pub programs: Programs,
+    pub refresher: Refresher,
     pub rpc_endpoints: RPCs,
     pub telemetry: Telemetry,
 }

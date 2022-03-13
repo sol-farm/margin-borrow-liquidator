@@ -13,7 +13,6 @@ pub struct Obligation {
     pub id: i64,
     pub ltv: f64,
     pub account: String,
-    pub account_data: Vec<u8>,
     pub scraped_at: DateTime<Utc>,
 }
 

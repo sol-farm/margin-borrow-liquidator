@@ -116,7 +116,10 @@ async fn main() -> Result<()> {
                 SubCommand::with_name("start-simple")
                 .about("starts the simple liquidator bot")
                 .arg(ltv_filter_mode)
-                .arg(ltv_filter_value)
+                .arg(ltv_filter_value),
+                SubCommand::with_name("start-refresher")
+                .about("starts the refresher service")
+                .long_about("starts the refresher service, which updates the ltv of obligations stored in the database")
             ])
         )
         .get_matches();
@@ -185,6 +188,7 @@ async fn process_matches<'a>(
         },
         ("liquidator", Some(liquidator_command)) => match liquidator_command.subcommand() {
             ("start-simple", Some(start)) => liq_bot::start_simple(start, config_file_path),
+            ("start-refresher", Some(start)) => liq_bot::start_refresher(start, config_file_path),
             _ => invalid_subcommand("liquidator"),
         },
         _ => invalid_command(),
