@@ -1,3 +1,5 @@
+#![warn(clippy::too_many_arguments)]
+
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
 use anchor_lang::solana_program::sysvar;

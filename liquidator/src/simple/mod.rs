@@ -19,8 +19,6 @@ use std::collections::HashMap;
 use db::filters::{LtvFilter, ObligationMatcher};
 use std::sync::Arc;
 
-use rayon::prelude::*;
-
 pub struct Obligation {
     pub ltv: f64,
     pub account: String,
