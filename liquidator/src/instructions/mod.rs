@@ -50,6 +50,11 @@ pub fn new_refresh_reserve_ix(
 }
 
 /// returns a new instruction used to liquidity a positions unhealthy collateral
+/// repay reserve is the funds being returned that were loaned, while the withdraw reserve
+/// is the reserve for the collateral which was deposited.
+/// 
+/// the amount specified is the amount of borrowed liquidity to repay with
+/// u64::MAX indicating to repay 100% of the borrowed amount.
 pub fn new_liquidate_lending_obligation_ix(
     source_liquidity_token_account: Pubkey,
     destination_collateral_token_account: Pubkey,
@@ -62,7 +67,10 @@ pub fn new_liquidate_lending_obligation_ix(
     derived_lending_market_authority: Pubkey,
     // the main signer / caller
     authority: Pubkey,
+    amount: u64,
 ) -> Instruction {
+    let mut data = vec![29];
+    data.extend_from_slice(&amount.to_le_bytes());
     Instruction {
         program_id: LENDING_PROGRAM_ID,
         accounts: vec![
@@ -79,6 +87,6 @@ pub fn new_liquidate_lending_obligation_ix(
             AccountMeta::new_readonly(sysvar::clock::id(), false),
             AccountMeta::new_readonly(spl_token::id(), false),
         ],
-        data: vec![29],
+        data,
     }
 }
