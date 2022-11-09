@@ -3,7 +3,7 @@
 use anchor_lang::prelude::*;
 use anyhow::{anyhow, Result};
 use db::models::Obligation as DbObligation;
-use log::{error, info, warn};
+use log::{error};
 use solana_account_decoder::UiAccountEncoding;
 use solana_client::rpc_client::RpcClient;
 use solana_sdk::program_pack::Pack;

@@ -41,15 +41,25 @@ impl Service {
                         let scraped_at = scraped_at;
                         let reserve_account_map = Arc::clone(&reserve_account_map);
                         let service = Arc::clone(self);
+                        let reserve_account_map = match service.config.get_reserve_infos(
+                            &service.rpc, 
+                            &reserve_account_map
+                        ) {
+                            Ok(reserve_account_map) => reserve_account_map,
+                            Err(err) => {
+                                log::error!("failed to load reserve accounts {:#?}", err);
+                                return;
+                            }
+                        };
                         tokio::task::spawn_blocking(move || {
                             info!("initiating obligation account scraper");
-                            scrapers::lending_obligation::scrape_lending_obligations(
+                            if let Err(err) = scrapers::lending_obligation::scrape_lending_obligations(
                                 &service.config,
                                 &service.rpc,
-                                &conn,
-                                &reserve_account_map,
-                                scraped_at,
-                            );
+                                reserve_account_map,
+                            ) {
+                                log::error!("failed to scrape lending obligation {:#?}", err);
+                            };
                             info!("finished obligation account scraping");
                             drop(wg);
                         });

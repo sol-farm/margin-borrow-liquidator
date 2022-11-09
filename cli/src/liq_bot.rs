@@ -34,7 +34,7 @@ pub fn start_simple(matches: &clap::ArgMatches, config_file_path: String) -> Res
     simple_liquidator.start(ltv_filter, subscriber)
 }
 
-pub fn start_refresher(matches: &clap::ArgMatches, config_file_path: String) -> Result<()> {
+pub fn start_refresher(_matches: &clap::ArgMatches, config_file_path: String) -> Result<()> {
     let cfg = Arc::new(get_config(&config_file_path)?);
     let simple_liquidator = liquidator::refresher::Refresher::new(cfg)?;
 

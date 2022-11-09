@@ -39,3 +39,5 @@ spl-associated-token-account = "1.0.3"
 arrform = {git = "https://github.com/sol-farm/arrform.git", rev = "fdbb0cfe18eadbff99cc8cd63f1b5a43df70e665"}
 csv = "1.1.6"
 tulipv2-sdk-common = "0.9.5"
+bonerjams-db = "0.0.2"
+bonerjams-config = "0.0.2"

@@ -3,22 +3,22 @@
 use std::sync::Arc;
 pub mod refresh;
 use anchor_lang::prelude::*;
-use anyhow::{anyhow, Result};
+use anyhow::{Result};
 use chrono::Utc;
 use config::Configuration;
 use crossbeam::select;
 use crossbeam_channel::tick;
 use diesel::r2d2;
 use diesel::PgConnection;
-use log::{error, info, warn};
+use log::{error};
 use rayon::ThreadPoolBuilder;
-use solana_account_decoder::UiAccountEncoding;
+
 use solana_client::rpc_client::RpcClient;
-use solana_sdk::pubkey::Pubkey;
-use std::collections::HashMap;
+
+
 use std::str::FromStr;
 
-use db::filters::{LtvFilter, ObligationMatcher};
+use db::filters::{ObligationMatcher};
 
 use crate::refresher::refresh::handle_pseudo_obligation_refresh;
 
@@ -41,7 +41,7 @@ impl Refresher {
             rpc: Arc::new(rpc),
         }))
     }
-    pub fn start(self: &Arc<Self>, exit_chan: crossbeam_channel::Receiver<bool>) -> Result<()> {
+    pub fn start(self: &Arc<Self>, _exit_chan: crossbeam_channel::Receiver<bool>) -> Result<()> {
         let pool = ThreadPoolBuilder::new()
             .num_threads(self.cfg.refresher.max_concurrency as usize)
             .build()?;

@@ -55,7 +55,7 @@ impl SimpleLiquidator {
         loop {
             select! {
                 recv(ticker) -> _msg => {
-                    let mut obligations = match db::client::get_obligation(
+                    let obligations = match db::client::get_obligation(
                         &conn,
                         &ObligationMatcher::All,
                         Some(ltv_filter)

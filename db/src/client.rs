@@ -412,11 +412,11 @@ mod test {
 
         let ltv_one = 420.69;
         let account_one = "account-1";
-        let account_data_one = "420".as_bytes().to_vec();
+        let _account_data_one = "420".as_bytes().to_vec();
 
         let ltv_two = 69.420;
         let account_two = "account-2";
-        let account_data_two = "69".as_bytes().to_vec();
+        let _account_data_two = "69".as_bytes().to_vec();
 
         // we should have no results
         let results = get_obligation(&conn, &ObligationMatcher::All, None).unwrap();
@@ -530,19 +530,19 @@ mod test {
         std::thread::sleep(std::time::Duration::from_secs(2));
         let ltv_one = 0.70;
         let account_one = "account-1";
-        let account_data_one = "70".as_bytes().to_vec();
+        let _account_data_one = "70".as_bytes().to_vec();
 
         let ltv_two = 0.75;
         let account_two = "account-2";
-        let account_data_two = "75".as_bytes().to_vec();
+        let _account_data_two = "75".as_bytes().to_vec();
 
         let ltv_three = 0.80;
         let account_three = "account-3";
-        let account_data_three = "80".as_bytes().to_vec();
+        let _account_data_three = "80".as_bytes().to_vec();
 
         let ltv_four = 0.85;
         let account_four = "account-4";
-        let account_data_four = "85".as_bytes().to_vec();
+        let _account_data_four = "85".as_bytes().to_vec();
 
         put_obligation(&conn, ltv_one, account_one, scraped_at_one).unwrap();
         put_obligation(&conn, ltv_two, account_two, scraped_at_one).unwrap();
