@@ -37,7 +37,7 @@ use std::{fs::File, str::FromStr};
 
 /// main configuration object
 #[remain::sorted]
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Configuration {
     pub analytics: Analytics,
     pub database: Database,
@@ -48,6 +48,7 @@ pub struct Configuration {
     pub programs: Programs,
     pub refresher: Refresher,
     pub rpc_endpoints: RPCs,
+    pub sled_db: bonerjams_config::Configuration,
     pub telemetry: Telemetry,
 }
 
@@ -209,7 +210,17 @@ impl Default for Configuration {
                 enabled: true,
                 agent_endpoint: String::from("http://localhost:8126"),
             },
-            ..Default::default()
+            sled_db: bonerjams_config::Configuration { 
+                db: bonerjams_config::database::DbOpts {
+                    path: "liquidator.db".to_string(),
+                    ..Default::default()
+                },
+                ..Default::default()
+             },
+             key_path: "".to_string(),
+             liquidator: Liquidator { frequency: 100, max_concurrency: 32, min_ltv: 85.0 },
+             refresher: Refresher { frequency: 100, max_concurrency: 32}
+
         }
     }
 }

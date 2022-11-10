@@ -60,6 +60,7 @@ impl Service {
                             ) {
                                 log::error!("failed to scrape lending obligation {:#?}", err);
                             };
+                            
                             info!("finished obligation account scraping");
                             drop(wg);
                         });

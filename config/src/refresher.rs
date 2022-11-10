@@ -9,6 +9,4 @@ pub struct Refresher {
     pub frequency: u64,
     /// the maximum number of concurrent refreshes which can be running
     pub max_concurrency: u64,
-    /// the max size of the database connection pool
-    pub pool_size: u64,
 }
