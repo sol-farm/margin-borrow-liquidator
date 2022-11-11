@@ -219,10 +219,16 @@ impl SimpleLiquidator {
                 obligation_key, deposit.deposit_reserve, borrow.borrow_reserve
             );
             match self.rpc.send_and_confirm_transaction(&tx).await {
-                Ok(sig) => info!(
-                    "sent liquidation obligation {} tx {}. deposit_reserve {}, borrow_reserve {}",
-                    obligation_key, sig, deposit.deposit_reserve, borrow.borrow_reserve
-                ),
+                Ok(sig) => {
+                    info!(
+                        "sent liquidation obligation {} tx {}. deposit_reserve {}, borrow_reserve {}",
+                        obligation_key, sig, deposit.deposit_reserve, borrow.borrow_reserve
+                    );
+                    // delete the obligation from the database
+                    if let Err(err) = self.db.delete_obligations(&[obligation_key]) {
+                        log::error!("failed to delete obligation {}: {:#?}", obligation_key, err);
+                    }
+                }
                 Err(err) => error!(
                     "failed to send liquidate obligation {} tx {:#?}. deposit_reserve {}, borrow_reserve {}",
                     obligation_key, err, deposit.deposit_reserve, borrow.borrow_reserve,
