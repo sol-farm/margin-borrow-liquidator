@@ -5,7 +5,7 @@ use db::models::PriceFeed;
 use db::LiquidatorDb;
 use log::error;
 
-use solana_client::rpc_client::RpcClient;
+use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -14,7 +14,7 @@ use tulipv2_sdk_common::pyth;
 
 /// scrapes the given price accounts for the quoted price
 /// caching the value into the database.
-pub fn scrape_price_feeds(
+pub async fn scrape_price_feeds(
     config: &Arc<Configuration>,
     rpc: &Arc<RpcClient>,
     db: &Arc<LiquidatorDb>,
@@ -23,7 +23,7 @@ pub fn scrape_price_feeds(
 ) {
     let price_feeds = config.analytics.price_feed_map();
 
-    let mut price_feed_accounts = match config.get_price_feeds(rpc, price_accounts) {
+    let mut price_feed_accounts = match config.get_price_feeds(rpc, price_accounts).await {
         Ok(price_feed_accounts) => price_feed_accounts,
         Err(err) => {
             error!("failed to retrieve price feed accounts {:#?}", err);

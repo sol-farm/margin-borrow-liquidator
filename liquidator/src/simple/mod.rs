@@ -12,7 +12,7 @@ use log::{error, info, warn};
 
 use rayon::ThreadPoolBuilder;
 use solana_account_decoder::UiAccountEncoding;
-use solana_client::rpc_client::RpcClient;
+use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
 use std::collections::HashMap;
 
@@ -55,7 +55,7 @@ impl SimpleLiquidator {
                                 let service = self.clone();
                                 let obligation = obligation.clone();
                                 tokio::task::spawn(async move {
-                                    match service.handle_liquidation_check(&obligation) {
+                                    match service.handle_liquidation_check(&obligation).await {
                                         Ok(_) => (),
                                         Err(err) => error!(
                                             "liquidation for obligation {} failed: {:#?}",

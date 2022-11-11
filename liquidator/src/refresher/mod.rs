@@ -14,7 +14,7 @@ use diesel::PgConnection;
 use futures_util::FutureExt;
 use log::error;
 use rayon::ThreadPoolBuilder;
-use solana_client::rpc_client::RpcClient;
+use solana_client::nonblocking::rpc_client::RpcClient;
 
 use std::str::FromStr;
 
@@ -64,7 +64,7 @@ impl Refresher {
                                     match handle_pseudo_obligation_refresh(
                                         &service.rpc,
                                         &obligation,
-                                    ) {
+                                    ).await {
                                         Ok(refreshed_obligation) => {
                                             match refreshed_obligation.loan_to_value() {
                                                 Ok(ltv) => {

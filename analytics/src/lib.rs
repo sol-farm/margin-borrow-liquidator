@@ -10,7 +10,7 @@ use diesel::{
     PgConnection,
 };
 use log::{error, info, warn};
-use solana_client::rpc_client::RpcClient;
+use solana_client::nonblocking::rpc_client::RpcClient;
 use std::sync::Arc;
 
 pub struct Service {
@@ -35,61 +35,6 @@ impl Service {
     ) -> Result<()> {
         let price_feed_map = Arc::new(self.config.analytics.price_account_map());
         let reserve_account_map = Arc::new(self.config.analytics.reserve_map());
-        let mut work_loop = || {
-            let scraped_at = Utc::now();
-            let wg = WaitGroup::new();
-            // start the obligation account scraper
-            {
-                let reserve_account_map = Arc::clone(&reserve_account_map);
-                let service = self.clone();
-                let reserve_account_map = match service
-                    .config
-                    .get_reserve_infos(&service.rpc, &reserve_account_map)
-                {
-                    Ok(reserve_account_map) => reserve_account_map,
-                    Err(err) => {
-                        log::error!("failed to load reserve accounts {:#?}", err);
-                        return;
-                    }
-                };
-                let wg = wg.clone();
-                tokio::task::spawn(async move {
-                    info!("initiating obligation account scraper");
-                    if let Err(err) = scrapers::lending_obligation::scrape_lending_obligations(
-                        &service.config,
-                        &service.rpc,
-                        reserve_account_map,
-                    ) {
-                        log::error!("failed to scrape lending obligation {:#?}", err);
-                    };
-
-                    info!("finished obligation account scraping");
-                    drop(wg);
-                });
-            }
-            // start the price feed scraper
-            {
-                let wg = wg.clone();
-                let scraped_at = scraped_at;
-                let service = Arc::clone(self);
-
-                tokio::task::spawn(async move {
-                    info!("initiating price feed scraper");
-                    scrapers::price_feeds::scrape_price_feeds(
-                        &service.config,
-                        &service.rpc,
-                        &service.db,
-                        &price_feed_map,
-                        scraped_at,
-                    );
-                    info!("finished price feed scraping");
-                    drop(wg);
-                });
-            }
-            wg.wait();
-        };
-        info!("starting initial analytics run on startup");
-        work_loop();
         let ticker = tick(std::time::Duration::from_secs(
             self.config.analytics.scrape_interval,
         ));
@@ -99,7 +44,57 @@ impl Service {
         loop {
             tokio::select! {
                 _ = ticker.tick() => {
+                    let scraped_at = Utc::now();
+                    let wg = WaitGroup::new();
+                    // start the obligation account scraper
+                    {
+                        let reserve_account_map = Arc::clone(&reserve_account_map);
+                        let service = self.clone();
+                        let reserve_account_map = match service
+                            .config
+                            .get_reserve_infos(&service.rpc, &reserve_account_map).await
+                        {
+                            Ok(reserve_account_map) => reserve_account_map,
+                            Err(err) => {
+                                log::error!("failed to load reserve accounts {:#?}", err);
+                                continue;
+                            }
+                        };
+                        let wg = wg.clone();
+                        tokio::task::spawn(async move {
+                            info!("initiating obligation account scraper");
+                            if let Err(err) = scrapers::lending_obligation::scrape_lending_obligations(
+                                &service.config,
+                                &service.rpc,
+                                reserve_account_map,
+                            ).await {
+                                log::error!("failed to scrape lending obligation {:#?}", err);
+                            };
 
+                            info!("finished obligation account scraping");
+                            drop(wg);
+                        });
+                    }
+                    // start the price feed scraper
+                    {
+                        let wg = wg.clone();
+                        let scraped_at = scraped_at;
+                        let service = Arc::clone(self);
+                        let price_feed_map = price_feed_map.clone();
+                        tokio::task::spawn(async move {
+                            info!("initiating price feed scraper");
+                            scrapers::price_feeds::scrape_price_feeds(
+                                &service.config,
+                                &service.rpc,
+                                &service.db,
+                                &price_feed_map,
+                                scraped_at,
+                            ).await;
+                            info!("finished price feed scraping");
+                            drop(wg);
+                        });
+                    }
+                    wg.wait();
                 }
                 _ = &mut exit_chan => {
                     log::warn!("received exit signal");

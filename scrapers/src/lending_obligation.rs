@@ -5,8 +5,9 @@ use diesel::PgConnection;
 use log::error;
 
 use solana_account_decoder::UiAccountEncoding;
+use solana_client::nonblocking::rpc_client::RpcClient;
+use solana_client::rpc_config::RpcAccountInfoConfig;
 use solana_client::rpc_filter::RpcFilterType;
-use solana_client::{rpc_client::RpcClient, rpc_config::RpcAccountInfoConfig};
 use solana_sdk::account::Account;
 use solana_sdk::program_pack::Pack;
 use solana_sdk::pubkey::Pubkey;
@@ -22,7 +23,7 @@ use tulipv2_sdk_common::lending::reserve::Reserve;
 pub const LENDING_OBLIGATION_SIZE: usize = LendingObligation::LEN;
 
 /// fetches all lending obligations, and refreshes the lending obligation state locally.
-pub fn scrape_lending_obligations(
+pub async fn scrape_lending_obligations(
     config: &Arc<Configuration>,
     rpc: &Arc<RpcClient>,
     reserve_account_map: HashMap<Pubkey, Reserve>,
@@ -34,19 +35,22 @@ pub fn scrape_lending_obligations(
     //    }
     //};
 
-    let accounts = match rpc.get_program_accounts_with_config(
-        &config.programs.lending_id(),
-        solana_client::rpc_config::RpcProgramAccountsConfig {
-            filters: Some(vec![RpcFilterType::DataSize(
-                LENDING_OBLIGATION_SIZE as u64,
-            )]),
-            account_config: RpcAccountInfoConfig {
-                encoding: Some(UiAccountEncoding::Base64),
+    let accounts = match rpc
+        .get_program_accounts_with_config(
+            &config.programs.lending_id(),
+            solana_client::rpc_config::RpcProgramAccountsConfig {
+                filters: Some(vec![RpcFilterType::DataSize(
+                    LENDING_OBLIGATION_SIZE as u64,
+                )]),
+                account_config: RpcAccountInfoConfig {
+                    encoding: Some(UiAccountEncoding::Base64),
+                    ..Default::default()
+                },
                 ..Default::default()
             },
-            ..Default::default()
-        },
-    ) {
+        )
+        .await
+    {
         Ok(accounts) => accounts,
         Err(err) => {
             return Err(anyhow!("failed to retrieve lending obligations {:#?}", err));
