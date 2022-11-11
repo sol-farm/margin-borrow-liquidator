@@ -1,12 +1,12 @@
 //! standalone refresh helper function
 
-use anchor_lang::prelude::*;
 use anyhow::{anyhow, Result};
 use db::models::Obligation as DbObligation;
 use log::{error};
 use solana_account_decoder::UiAccountEncoding;
 use solana_client::rpc_client::RpcClient;
 use solana_sdk::program_pack::Pack;
+use solana_sdk::pubkey::Pubkey;
 use std::str::FromStr;
 use std::{collections::HashMap, sync::Arc};
 use tulipv2_sdk_common::lending::{
@@ -20,7 +20,7 @@ pub fn handle_pseudo_obligation_refresh(
     rpc: &Arc<RpcClient>,
     db_obligation: &DbObligation,
 ) -> Result<LendingObligation> {
-    let obligation_key = Pubkey::from_str(&db_obligation.account)?;
+    let obligation_key = db_obligation.account;
     let obligation_account_data = rpc.get_account_data(&obligation_key)?;
     let mut obligation_account = LendingObligation::unpack_unchecked(&obligation_account_data[..])?;
 

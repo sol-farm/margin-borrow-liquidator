@@ -33,3 +33,6 @@ tulipv2-sdk-common = "0.9.5"
 static-pubkey = "1.0.2"
 channels = {path = "../channels"}
 rayon = "1.5.1"
+futures-util = "0.3"
+bonerjams-db = "0.0.2"
+solana-program = "1.13"

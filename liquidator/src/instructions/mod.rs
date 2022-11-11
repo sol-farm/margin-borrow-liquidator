@@ -1,9 +1,11 @@
 #![allow(clippy::too_many_arguments)]
 
-use anchor_lang::prelude::*;
-use anchor_lang::solana_program;
-use anchor_lang::solana_program::sysvar;
+
+use solana_sdk::instruction::AccountMeta;
+use solana_sdk::sysvar;
+use solana_sdk::pubkey::Pubkey;
 use solana_sdk::instruction::Instruction;
+use solana_program;
 use static_pubkey::static_pubkey;
 
 pub const LENDING_PROGRAM_ID: Pubkey =

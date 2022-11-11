@@ -2,7 +2,6 @@
 //! have their ltv values periodically refreshed
 use std::sync::Arc;
 pub mod refresh;
-use anchor_lang::prelude::*;
 use anyhow::{Result};
 use chrono::Utc;
 use config::Configuration;
@@ -13,9 +12,9 @@ use diesel::r2d2;
 use diesel::PgConnection;
 use log::{error};
 use rayon::ThreadPoolBuilder;
-
+use futures_util::FutureExt;
+use bonerjams_db::DbBatch;
 use solana_client::rpc_client::RpcClient;
-
 
 use std::str::FromStr;
 
@@ -38,39 +37,47 @@ impl Refresher {
         }))
     }
     pub async fn start(self: &Arc<Self>, _exit_chan: crossbeam_channel::Receiver<bool>) -> Result<()> {
-        let ticker = tokio::time::interval(tokio::time::Duration::from_secs(self.cfg.refresher.frequency));
+        let mut ticker = tokio::time::interval(tokio::time::Duration::from_secs(self.cfg.refresher.frequency));
         loop {
             tokio::select! {
                 _ = ticker.tick() => {
                     match self.db.list_obligations(None) {
                         Ok(obligations) => {
                             use crate::awaitgroup::WaitGroup;
-
+                            let obligations_count = obligations.len();
                             let mut wg = WaitGroup::new();
 
-                            let (obligation_sender, obligation_receiver) = tokio::sync::mpsc::channel(obligations.len());
+                            let (obligation_sender, mut obligation_receiver) = tokio::sync::mpsc::channel(obligations_count);
 
 
-                            obligations.iter_mut().for_each(|obligation| {
+                            obligations.iter().for_each(|obligation| {
+                                let mut obligation = obligation.clone();
                                 let service = self.clone();
                                 let wg = wg.worker();
                                 let sender = obligation_sender.clone();
-                                tokio::task::spawn(async {
+                                tokio::task::spawn(async move {
                                     match handle_pseudo_obligation_refresh(
                                         &service.rpc,
                                         &obligation,
                                     ) {
                                         Ok(refreshed_obligation) => {
-                                            match f64::from_str(&ltv.to_string()) {
+                                            match refreshed_obligation.loan_to_value() {
                                                 Ok(ltv) => {
-                                                    obligation.ltv = ltv;
-                                                    // finished processing, send update
-                                                    if let Err(err) = sender.send(obligation.to_owned()).await {
-                                                        log::error!("failed to send refreshed obligation {:#?}", err);
+                                                    match f64::from_str(&ltv.to_string()) {
+                                                        Ok(ltv) => {
+                                                            obligation.ltv = ltv;
+                                                            // finished processing, send update
+                                                            if sender.send(obligation.to_owned()).await.is_err() {
+                                                                log::error!("failed to send refreshed obligation");
+                                                            }
+                                                        },
+                                                        Err(err) => {
+                                                            error!("failed to parse ltv to float {}: {:#?}", obligation.account, err);
+                                                        }
                                                     }
-                                                },
+                                                }
                                                 Err(err) => {
-                                                    error!("failed to parse ltv to float {}: {:#?}", obligation.account, err);
+                                                    log::error!("failed to parse ltv {}: {:#?}", obligation.account, err)
                                                 }
                                             }
                                         }
@@ -82,9 +89,17 @@ impl Refresher {
                                 });
                             });
                             // wait for all obligation refresh routines to finish
+                            log::info!("waiting for routines to finish");
                             wg.wait().await;
-                            
-                            obligation_receiver.collect();
+                            let mut updates = Vec::with_capacity(obligations_count);
+                            log::info!("processing obligation receiver");
+                            while let Some(update) = obligation_receiver.recv().await {
+                                updates.push(update);
+                            }
+                            log::info!("updating database");
+                            if let Err(err) = self.db.insert_obligations(&updates[..]) {
+                                log::error!("failed to insert obligations {:#?}", err);
+                            }
                         },
                         Err(err) => {
                             log::error!("failed to list obligations {:#?}", err);

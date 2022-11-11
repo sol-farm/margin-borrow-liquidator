@@ -59,6 +59,7 @@ pub fn scrape_price_feeds(
                     return;
                 }
             };
+            
             if let Err(err) = db::client::put_price_feed(
                 conn,
                 &price_feed.token_mint,

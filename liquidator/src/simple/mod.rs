@@ -40,48 +40,40 @@ impl SimpleLiquidator {
             rpc: Arc::new(rpc),
         }))
     }
-    pub fn start(
+    pub async fn start(
         self: &Arc<Self>,
-        ltv_filter: LtvFilter,
-        exit_chan: crossbeam_channel::Receiver<bool>,
+        mut exit_chan: tokio::sync::oneshot::Receiver<bool>,
     ) -> Result<()> {
-        let pool = ThreadPoolBuilder::new()
-            .num_threads(self.cfg.liquidator.max_concurrency as usize)
-            .build()?;
-        let conn = self.pool.get()?;
-        let ticker = tick(std::time::Duration::from_secs(
-            self.cfg.liquidator.frequency,
-        ));
+
+        let mut ticker = tokio::time::interval(
+            tokio::time::Duration::from_secs(self.cfg.liquidator.frequency)
+        );
         loop {
-            select! {
-                recv(ticker) -> _msg => {
-                    let obligations = match db::client::get_obligation(
-                        &conn,
-                        &ObligationMatcher::All,
-                        Some(ltv_filter)
-                    ) {
-                        Ok(obligations) => obligations,
+            tokio::select! {
+                _ = ticker.tick() => {
+                    match self.db.list_obligations(Some(85.0)) {
+                        Ok(obligations) => {
+                            obligations.into_iter().for_each(|obligation| {
+                                let service = self.clone();
+                                let obligation = obligation.clone();
+                                tokio::task::spawn(async move {
+                                    match service.handle_liquidation_check(&obligation) {
+                                        Ok(_) => (),
+                                        Err(err) => error!(
+                                            "liquidation for obligation {} failed: {:#?}",
+                                            obligation.account, err,
+                                        ),
+                                    }
+                                });
+                            });
+                        },
                         Err(err) => {
-                            error!("failed to retrieve obligations {:#?}", err);
-                            continue;
+                            log::error!("failed to list obligations {:#?}", err);
                         }
-                    };
-                    for obligation in obligations {
-                        let service = Arc::clone(self);
-                        let obligation = obligation.clone();
-                        pool.spawn(move || {
-                            match service.handle_liquidation_check(&obligation) {
-                                Ok(_) => (),
-                                Err(err) => error!(
-                                    "liquidation for obligation {} failed: {:#?}",
-                                    obligation.account, err,
-                                ),
-                            };
-                        });
                     }
                 }
-                recv(exit_chan) -> _msg => {
-                    warn!("work_queue filler received exit notification");
+                _ = &mut exit_chan => {
+                    log::warn!("received exit channel");
                     return Ok(());
                 }
             }
