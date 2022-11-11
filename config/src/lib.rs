@@ -10,9 +10,10 @@ pub mod refresher;
 pub mod rpcs;
 pub mod telemetry;
 pub mod utils;
-
+use anchor_lang::prelude::Pubkey;
 use liquidator::Liquidator;
 use refresher::Refresher;
+use solana_sdk::signer::keypair::read_keypair_file;
 use telemetry::Telemetry;
 
 use crate::{
@@ -21,23 +22,19 @@ use crate::{
     programs::Programs,
     rpcs::{RPCEndpoint, RPCs},
 };
-use anchor_client::solana_sdk::{
-    pubkey::Pubkey,
-    signature::{read_keypair_file, Keypair},
-};
 
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use simplelog::*;
 use solana_clap_utils::keypair::signer_from_path;
 use solana_remote_wallet::remote_wallet;
-use solana_sdk::signer::Signer;
+use solana_sdk::{signature::Keypair, signer::Signer};
 use std::fs;
 use std::{fs::File, str::FromStr};
 
 /// main configuration object
 #[remain::sorted]
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Configuration {
     pub analytics: Analytics,
     pub database: Database,
@@ -48,6 +45,7 @@ pub struct Configuration {
     pub programs: Programs,
     pub refresher: Refresher,
     pub rpc_endpoints: RPCs,
+    pub sled_db: bonerjams_config::Configuration,
     pub telemetry: Telemetry,
 }
 
@@ -209,7 +207,23 @@ impl Default for Configuration {
                 enabled: true,
                 agent_endpoint: String::from("http://localhost:8126"),
             },
-            ..Default::default()
+            sled_db: bonerjams_config::Configuration {
+                db: bonerjams_config::database::DbOpts {
+                    path: "liquidator.db".to_string(),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            key_path: "".to_string(),
+            liquidator: Liquidator {
+                frequency: 100,
+                max_concurrency: 32,
+                min_ltv: 85.0,
+            },
+            refresher: Refresher {
+                frequency: 100,
+                max_concurrency: 32,
+            },
         }
     }
 }

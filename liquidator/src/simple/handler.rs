@@ -1,7 +1,7 @@
 use super::*;
 use crate::MIN_LTV;
 use db::models::Obligation;
-use solana_sdk::{program_pack::Pack, transaction::Transaction};
+use solana_sdk::{program_pack::Pack, signer::Signer, transaction::Transaction};
 use std::{cmp::Ordering, str::FromStr};
 use tulipv2_sdk_common::lending::{
     lending_obligation::{pseudo_refresh_lending_obligation, LendingObligation},
@@ -9,11 +9,11 @@ use tulipv2_sdk_common::lending::{
 };
 use tulipv2_sdk_common::math::decimal::Decimal;
 impl SimpleLiquidator {
-    pub fn handle_liquidation_check(self: &Arc<Self>, obligation: &Obligation) -> Result<()> {
-        let payer = self.cfg.payer_signer(None)?;
+    pub async fn handle_liquidation_check(self: &Arc<Self>, obligation: &Obligation) -> Result<()> {
+        let payer = self.cfg.payer();
         let payer_pubkey = payer.pubkey();
-        let obligation_key = Pubkey::from_str(&obligation.account)?;
-        let obligation_account_data = self.rpc.get_account_data(&obligation_key)?;
+        let obligation_key = obligation.account;
+        let obligation_account_data = self.rpc.get_account_data(&obligation_key).await?;
         let mut obligation_account =
             LendingObligation::unpack_unchecked(&obligation_account_data[..])?;
 
@@ -39,13 +39,17 @@ impl SimpleLiquidator {
         reserve_accounts.dedup();
 
         // fetch all reserve accounts in bulk
-        let mut reserve_account_infos = match self.rpc.get_multiple_accounts_with_config(
-            &reserve_accounts[..],
-            solana_client::rpc_config::RpcAccountInfoConfig {
-                encoding: Some(UiAccountEncoding::Base64Zstd),
-                ..Default::default()
-            },
-        ) {
+        let mut reserve_account_infos = match self
+            .rpc
+            .get_multiple_accounts_with_config(
+                &reserve_accounts[..],
+                solana_client::rpc_config::RpcAccountInfoConfig {
+                    encoding: Some(UiAccountEncoding::Base64),
+                    ..Default::default()
+                },
+            )
+            .await
+        {
             Ok(response) => response.value,
             Err(err) => {
                 return Err(anyhow!(
@@ -133,6 +137,7 @@ impl SimpleLiquidator {
             let liquidity_balance = match self
                 .rpc
                 .get_token_account_balance(&source_liquidity_token_account)
+                .await
             {
                 Ok(balance) => match u64::from_str(&balance.amount) {
                     Ok(amount) => Decimal::from(amount),
@@ -207,17 +212,23 @@ impl SimpleLiquidator {
                 amount_to_repay,
             ));
             let mut tx = Transaction::new_with_payer(&liq_instructions[..], Some(&payer_pubkey));
-            let blockhash = self.rpc.get_latest_blockhash()?;
-            tx.sign(&vec![&*payer], blockhash);
+            let blockhash = self.rpc.get_latest_blockhash().await?;
+            tx.sign(&vec![&payer], blockhash);
             info!(
                 "sending liquidation obligation {} tx. deposit_reserve {}, borrow_reserve {}",
                 obligation_key, deposit.deposit_reserve, borrow.borrow_reserve
             );
-            match self.rpc.send_and_confirm_transaction(&tx) {
-                Ok(sig) => info!(
-                    "sent liquidation obligation {} tx {}. deposit_reserve {}, borrow_reserve {}",
-                    obligation_key, sig, deposit.deposit_reserve, borrow.borrow_reserve
-                ),
+            match self.rpc.send_and_confirm_transaction(&tx).await {
+                Ok(sig) => {
+                    info!(
+                        "sent liquidation obligation {} tx {}. deposit_reserve {}, borrow_reserve {}",
+                        obligation_key, sig, deposit.deposit_reserve, borrow.borrow_reserve
+                    );
+                    // delete the obligation from the database
+                    if let Err(err) = self.db.delete_obligations(&[obligation_key]) {
+                        log::error!("failed to delete obligation {}: {:#?}", obligation_key, err);
+                    }
+                }
                 Err(err) => error!(
                     "failed to send liquidate obligation {} tx {:#?}. deposit_reserve {}, borrow_reserve {}",
                     obligation_key, err, deposit.deposit_reserve, borrow.borrow_reserve,

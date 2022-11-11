@@ -3,26 +3,35 @@
 #![allow(unused)]
 #![allow(clippy::all)]
 
-use crate::schema::*;
-
+use bonerjams_db::types::DbKey;
 use chrono::offset::Utc;
 use chrono::DateTime;
-#[derive(Queryable, Debug, Identifiable, AsChangeset, Model, Clone)]
-#[table_name = "obligations"]
+use serde::{Deserialize, Serialize};
+use solana_sdk::pubkey::Pubkey;
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Obligation {
-    pub id: i64,
     pub ltv: f64,
-    pub account: String,
+    pub account: Pubkey,
     pub scraped_at: DateTime<Utc>,
 }
 
-#[derive(Queryable, Debug, Identifiable, AsChangeset, Model, Clone)]
-#[table_name = "price_feeds"]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct PriceFeed {
-    pub id: i64,
-    pub token_mint: String,
-    pub price_account: String,
+    pub token_mint: Pubkey,
+    pub price_account: Pubkey,
     pub decimals: i16,
     pub price: f64,
     pub scraped_at: DateTime<Utc>,
+}
+
+impl DbKey for Obligation {
+    fn key(&self) -> anyhow::Result<Vec<u8>> {
+        Ok(self.account.to_bytes().to_vec())
+    }
+}
+
+impl DbKey for PriceFeed {
+    fn key(&self) -> anyhow::Result<Vec<u8>> {
+        Ok(self.price_account.to_bytes().to_vec())
+    }
 }

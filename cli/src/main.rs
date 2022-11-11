@@ -12,7 +12,6 @@ use log::error;
 
 mod analytics;
 mod config;
-mod database;
 mod helpers;
 mod liq_bot;
 use std::str::FromStr;
@@ -168,7 +167,7 @@ async fn process_matches<'a>(
     match matches.subcommand() {
         ("analytics", Some(analytics_command)) => match analytics_command.subcommand() {
             ("start-scraper-service", Some(start_scraper)) => {
-                analytics::start_scraper_service(start_scraper, config_file_path)
+                analytics::start_scraper_service(start_scraper, config_file_path).await
             }
             _ => invalid_subcommand("analytics"),
         },
@@ -182,13 +181,11 @@ async fn process_matches<'a>(
             }
             _ => invalid_subcommand("config"),
         },
-        ("database", Some(database_command)) => match database_command.subcommand() {
-            ("migrate", Some(_)) => database::run_database_migrations(config_file_path),
-            _ => invalid_subcommand("database"),
-        },
         ("liquidator", Some(liquidator_command)) => match liquidator_command.subcommand() {
-            ("start-simple", Some(start)) => liq_bot::start_simple(start, config_file_path),
-            ("start-refresher", Some(start)) => liq_bot::start_refresher(start, config_file_path),
+            ("start-simple", Some(start)) => liq_bot::start_simple(start, config_file_path).await,
+            ("start-refresher", Some(start)) => {
+                liq_bot::start_refresher(start, config_file_path).await
+            }
             _ => invalid_subcommand("liquidator"),
         },
         _ => invalid_command(),

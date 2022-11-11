@@ -4,6 +4,7 @@
 
 use tulipv2_sdk_common::math::{decimal::Decimal, uint::U192};
 
+pub mod awaitgroup;
 pub mod instructions;
 pub mod refresher;
 pub mod simple;

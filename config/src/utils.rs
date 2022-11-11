@@ -1,9 +1,9 @@
 use super::*;
-use anchor_client::solana_client::rpc_client::RpcClient;
 use anchor_lang::prelude::*;
 use anyhow::{anyhow, Result};
 use log::error;
 use solana_account_decoder::UiAccountEncoding;
+use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::program_pack::Pack;
 use std::{borrow::Borrow, collections::HashMap, sync::Arc};
 use tulipv2_sdk_common::{
@@ -12,7 +12,7 @@ use tulipv2_sdk_common::{
 };
 
 impl Configuration {
-    pub fn get_reserve_infos(
+    pub async fn get_reserve_infos(
         &self,
         rpc: &Arc<RpcClient>,
         account_key_map: &Arc<HashMap<Pubkey, String>>,
@@ -22,13 +22,16 @@ impl Configuration {
             .map(|account_key| *account_key.0)
             .collect();
 
-        let reserve_accounts = match rpc.get_multiple_accounts_with_config(
-            &account_keys[..],
-            solana_client::rpc_config::RpcAccountInfoConfig {
-                encoding: Some(UiAccountEncoding::Base64Zstd),
-                ..Default::default()
-            },
-        ) {
+        let reserve_accounts = match rpc
+            .get_multiple_accounts_with_config(
+                &account_keys[..],
+                solana_client::rpc_config::RpcAccountInfoConfig {
+                    encoding: Some(UiAccountEncoding::Base64),
+                    ..Default::default()
+                },
+            )
+            .await
+        {
             Ok(accounts) => accounts.value,
             Err(err) => {
                 return Err(anyhow!("failed to retrieve reserve accounts {:#?}", err));
@@ -67,7 +70,7 @@ impl Configuration {
 
         Ok(reserve_map)
     }
-    pub fn get_price_feeds(
+    pub async fn get_price_feeds(
         &self,
         rpc: &Arc<RpcClient>,
         account_key_map: &Arc<HashMap<Pubkey, String>>,
@@ -77,13 +80,16 @@ impl Configuration {
             .map(|account_key| *account_key.0)
             .collect();
 
-        let price_feed_accounts = match rpc.get_multiple_accounts_with_config(
-            &account_keys[..],
-            solana_client::rpc_config::RpcAccountInfoConfig {
-                encoding: Some(UiAccountEncoding::Base64Zstd),
-                ..Default::default()
-            },
-        ) {
+        let price_feed_accounts = match rpc
+            .get_multiple_accounts_with_config(
+                &account_keys[..],
+                solana_client::rpc_config::RpcAccountInfoConfig {
+                    encoding: Some(UiAccountEncoding::Base64),
+                    ..Default::default()
+                },
+            )
+            .await
+        {
             Ok(accounts) => accounts.value,
             Err(err) => {
                 return Err(anyhow!("failed to retrieve reserve accounts {:#?}", err));
@@ -132,8 +138,8 @@ pub fn generate_random_number(min: i64, max: i64) -> i64 {
 #[cfg(test)]
 mod test {
     use super::*;
-    #[test]
-    fn test_reserve_info_price_feed_helpers() {
+    #[tokio::test]
+    async fn test_reserve_info_price_feed_helpers() {
         let cfg = Configuration {
             rpc_endpoints: RPCs {
                 failover_endpoints: vec![],
@@ -167,8 +173,8 @@ mod test {
         let rpc = Arc::new(cfg.get_rpc_client(false, None));
         let reserve_map = Arc::new(cfg.analytics.reserve_map());
         let price_feed_map = Arc::new(cfg.analytics.price_account_map());
-        let reserve_account_map = cfg.get_reserve_infos(&rpc, &reserve_map).unwrap();
-        let price_feed_account_map = cfg.get_price_feeds(&rpc, &price_feed_map).unwrap();
+        let reserve_account_map = cfg.get_reserve_infos(&rpc, &reserve_map).await.unwrap();
+        let price_feed_account_map = cfg.get_price_feeds(&rpc, &price_feed_map).await.unwrap();
         assert_eq!(reserve_map.len(), reserve_account_map.len());
         assert_eq!(price_feed_account_map.len(), price_feed_map.len());
     }

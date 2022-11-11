@@ -1,20 +1,18 @@
 //! the same request_builder from https://github.com/project-serum/anchor with minor modifications
 
-use anchor_client::anchor_lang::InstructionData;
-use anchor_client::anchor_lang::ToAccountMetas;
-use anchor_client::solana_client::rpc_client::RpcClient;
-use anchor_client::solana_client::rpc_config::RpcSendTransactionConfig;
+use solana_client::rpc_client::RpcClient;
+use solana_client::rpc_config::RpcSendTransactionConfig;
 
-use anchor_client::solana_sdk::commitment_config::CommitmentConfig;
+use solana_sdk::commitment_config::CommitmentConfig;
 
-use anchor_client::solana_sdk::instruction::AccountMeta;
-use anchor_client::solana_sdk::instruction::Instruction;
-use anchor_client::solana_sdk::pubkey::Pubkey;
+use solana_sdk::instruction::AccountMeta;
+use solana_sdk::instruction::Instruction;
+use solana_sdk::pubkey::Pubkey;
 
-use anchor_client::solana_sdk::signature::Signature;
-use anchor_client::solana_sdk::signature::Signer;
+use solana_sdk::signature::Signature;
+use solana_sdk::signature::Signer;
 
-use anchor_client::solana_sdk::transaction::Transaction;
+use solana_sdk::transaction::Transaction;
 
 use anyhow::{anyhow, Result};
 
@@ -78,13 +76,13 @@ impl<'a> RequestBuilder<'a> {
         self.instructions.push(ix);
         self
     }
-    pub fn accounts(mut self, accounts: impl ToAccountMetas) -> Self {
-        let mut metas = accounts.to_account_metas(None);
-        self.accounts.append(&mut metas);
+    pub fn accounts(mut self, accounts: &[AccountMeta]) -> Self {
+        self.accounts.extend_from_slice(accounts);
         self
     }
-    pub fn args(mut self, args: impl InstructionData) -> Self {
-        self.instruction_data = Some(args.data());
+    /// intended for anchor instruction data
+    pub fn args(mut self, args: &[u8]) -> Self {
+        self.instruction_data = Some(args.to_vec());
         self
     }
     /// adds an additional signer
@@ -140,7 +138,7 @@ impl<'a> RequestBuilder<'a> {
             self.instructions.clone()
         };
         let blockhash = self.rpc_client.get_latest_blockhash()?;
-        let mut signers = vec![&*self.payer];
+        let mut signers = vec![self.payer];
         for signer in self.signers.iter() {
             signers.push(&**signer);
         }

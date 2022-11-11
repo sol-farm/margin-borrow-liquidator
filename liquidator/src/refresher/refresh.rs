@@ -1,13 +1,13 @@
 //! standalone refresh helper function
 
-use anchor_lang::prelude::*;
 use anyhow::{anyhow, Result};
 use db::models::Obligation as DbObligation;
-use log::{error};
+use log::error;
 use solana_account_decoder::UiAccountEncoding;
-use solana_client::rpc_client::RpcClient;
+use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::program_pack::Pack;
-use std::str::FromStr;
+use solana_sdk::pubkey::Pubkey;
+
 use std::{collections::HashMap, sync::Arc};
 use tulipv2_sdk_common::lending::{
     lending_obligation::{pseudo_refresh_lending_obligation, LendingObligation},
@@ -16,12 +16,12 @@ use tulipv2_sdk_common::lending::{
 
 /// given a database Obligation record, automatically fetch all accounts
 /// required to preform a pseudo refresh, returning the refreshed oblgiation
-pub fn handle_pseudo_obligation_refresh(
+pub async fn handle_pseudo_obligation_refresh(
     rpc: &Arc<RpcClient>,
     db_obligation: &DbObligation,
 ) -> Result<LendingObligation> {
-    let obligation_key = Pubkey::from_str(&db_obligation.account)?;
-    let obligation_account_data = rpc.get_account_data(&obligation_key)?;
+    let obligation_key = db_obligation.account;
+    let obligation_account_data = rpc.get_account_data(&obligation_key).await?;
     let mut obligation_account = LendingObligation::unpack_unchecked(&obligation_account_data[..])?;
 
     // contains all reserves used as collateral
@@ -45,13 +45,16 @@ pub fn handle_pseudo_obligation_refresh(
     reserve_accounts.dedup();
 
     // fetch all reserve accounts in bulk
-    let mut reserve_account_infos = match rpc.get_multiple_accounts_with_config(
-        &reserve_accounts[..],
-        solana_client::rpc_config::RpcAccountInfoConfig {
-            encoding: Some(UiAccountEncoding::Base64Zstd),
-            ..Default::default()
-        },
-    ) {
+    let mut reserve_account_infos = match rpc
+        .get_multiple_accounts_with_config(
+            &reserve_accounts[..],
+            solana_client::rpc_config::RpcAccountInfoConfig {
+                encoding: Some(UiAccountEncoding::Base64),
+                ..Default::default()
+            },
+        )
+        .await
+    {
         Ok(response) => response.value,
         Err(err) => {
             return Err(anyhow!(

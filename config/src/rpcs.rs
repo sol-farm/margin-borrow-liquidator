@@ -1,12 +1,9 @@
 use crate::Configuration;
-use anchor_client::{
-    solana_client::rpc_client::RpcClient,
-    solana_sdk::{commitment_config::CommitmentConfig, signature::read_keypair_file},
-    Client, Cluster,
-};
 use serde::{Deserialize, Serialize};
+use solana_client::nonblocking::rpc_client::RpcClient;
+use solana_sdk::commitment_config::CommitmentConfig;
 use solana_sdk::{pubkey::Pubkey, signer::Signer};
-use std::{rc::Rc, sync::Arc};
+use std::sync::Arc;
 
 #[remain::sorted]
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -38,20 +35,6 @@ impl Configuration {
             timeout,
             commitment,
         )
-    }
-    /// returns the primary rpc provider with the value of `key_path` used as a signer
-    /// this does not support hardware wallets
-    pub fn get_client(&self, commitment: Option<CommitmentConfig>) -> Client {
-        let payer = read_keypair_file(self.key_path.clone()).expect("failed to read keypair file");
-        let cluster = Cluster::Custom(
-            self.rpc_endpoints.primary_endpoint.http_url.clone(),
-            self.rpc_endpoints.primary_endpoint.ws_url.clone(),
-        );
-        let commitment = match commitment {
-            Some(commit) => commit,
-            None => CommitmentConfig::confirmed(),
-        };
-        Client::new_with_options(cluster, Rc::new(payer), commitment)
     }
     // returns the primary rpc provider
     pub fn get_rpc_client(&self, ws: bool, commitment: Option<CommitmentConfig>) -> RpcClient {
