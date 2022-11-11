@@ -10,7 +10,8 @@ pub mod refresher;
 pub mod rpcs;
 pub mod telemetry;
 pub mod utils;
-
+use solana_sdk::signer::keypair::read_keypair_file;
+use anchor_lang::prelude::Pubkey;
 use liquidator::Liquidator;
 use refresher::Refresher;
 use telemetry::Telemetry;
@@ -21,17 +22,13 @@ use crate::{
     programs::Programs,
     rpcs::{RPCEndpoint, RPCs},
 };
-use anchor_client::solana_sdk::{
-    pubkey::Pubkey,
-    signature::{read_keypair_file, Keypair},
-};
 
 use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use simplelog::*;
 use solana_clap_utils::keypair::signer_from_path;
 use solana_remote_wallet::remote_wallet;
-use solana_sdk::signer::Signer;
+use solana_sdk::{signer::Signer, signature::Keypair};
 use std::fs;
 use std::{fs::File, str::FromStr};
 

@@ -12,7 +12,7 @@ impl SimpleLiquidator {
     pub fn handle_liquidation_check(self: &Arc<Self>, obligation: &Obligation) -> Result<()> {
         let payer = self.cfg.payer_signer(None)?;
         let payer_pubkey = payer.pubkey();
-        let obligation_key = Pubkey::from_str(&obligation.account)?;
+        let obligation_key = obligation.account;
         let obligation_account_data = self.rpc.get_account_data(&obligation_key)?;
         let mut obligation_account =
             LendingObligation::unpack_unchecked(&obligation_account_data[..])?;

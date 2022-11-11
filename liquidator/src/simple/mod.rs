@@ -16,7 +16,6 @@ use solana_client::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
 use std::collections::HashMap;
 
-use db::filters::{LtvFilter, ObligationMatcher};
 use std::sync::Arc;
 
 pub struct Obligation {
@@ -26,17 +25,18 @@ pub struct Obligation {
 
 pub struct SimpleLiquidator {
     pub cfg: Arc<Configuration>,
-    pub pool: r2d2::Pool<r2d2::ConnectionManager<PgConnection>>,
+    pub db: Arc<db::LiquidatorDb>,
     pub rpc: Arc<RpcClient>,
 }
 
 impl SimpleLiquidator {
-    pub fn new(cfg: Arc<Configuration>) -> Result<Arc<SimpleLiquidator>> {
-        let pool = db::new_connection_pool(cfg.database.conn_url.clone(), cfg.database.pool_size)?;
+    pub fn new(cfg: Configuration) -> Result<Arc<SimpleLiquidator>> {
+
+        let db = db::LiquidatorDb::new(cfg.clone())?;
         let rpc = cfg.get_rpc_client(false, None);
         Ok(Arc::new(SimpleLiquidator {
-            cfg,
-            pool,
+            cfg: Arc::new(cfg),
+            db: Arc::new(db),
             rpc: Arc::new(rpc),
         }))
     }

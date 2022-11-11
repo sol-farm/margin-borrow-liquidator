@@ -1,5 +1,5 @@
 use super::*;
-use anchor_client::solana_client::rpc_client::RpcClient;
+use solana_client::rpc_client::RpcClient;
 use anchor_lang::prelude::*;
 use anyhow::{anyhow, Result};
 use log::error;

@@ -13,13 +13,12 @@ anyhow = "1.0.41"
 simplelog = "0.10.0"
 log = "0.4.14"
 serde_json = "1.0.64"
-solana-sdk = "1.9.1"
-solana-client = "1.9.1"
-anchor-client = "0.22.0"
-anchor-lang = "0.22.0"
+solana-sdk = "1.13"
+solana-client = "1.13"
+anchor-lang = {git = "https://github.com/coral-xyz/anchor.git", rev = "7a0a37e0f8729f03e377acac18e3cf68934a294b"}
 remain = "0.2"
-solana-remote-wallet = "1.9.1"
-solana-clap-utils = "1.9.1"
+solana-remote-wallet = "1.13"
+solana-clap-utils = "1.13"
 rpassword = "4"
 clap = "2.33.3"
 tiny-bip39 = "0.8.2" 
@@ -33,7 +32,7 @@ spl-token = "3.2.0"
 opentelemetry-datadog = {version = "0.5.0", features = ["reqwest-client"]}
 opentelemetry = {version =  "0.17", features = ["rt-tokio"]}
 itertools = "0.10.3"
-solana-account-decoder = "1.9.1"
+solana-account-decoder = "1.13"
 rpc_utils = {path = "../rpc_utils"}
 spl-associated-token-account = "1.0.3"
 arrform = {git = "https://github.com/sol-farm/arrform.git", rev = "fdbb0cfe18eadbff99cc8cd63f1b5a43df70e665"}
