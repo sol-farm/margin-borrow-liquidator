@@ -33,3 +33,5 @@ arrform = {git = "https://github.com/sol-farm/arrform.git", rev = "fdbb0cfe18ead
 bytemuck = "1.7.2"
 tulipv2-sdk-common = "0.9.5"
 static-pubkey = "1.0.2"
+bonerjams-db = "0.0.2"
+bonerjams-config = "0.0.2"

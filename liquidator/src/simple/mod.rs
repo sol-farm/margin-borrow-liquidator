@@ -31,7 +31,6 @@ pub struct SimpleLiquidator {
 
 impl SimpleLiquidator {
     pub fn new(cfg: Configuration) -> Result<Arc<SimpleLiquidator>> {
-
         let db = db::LiquidatorDb::new(cfg.clone())?;
         let rpc = cfg.get_rpc_client(false, None);
         Ok(Arc::new(SimpleLiquidator {
@@ -44,10 +43,9 @@ impl SimpleLiquidator {
         self: &Arc<Self>,
         mut exit_chan: tokio::sync::oneshot::Receiver<bool>,
     ) -> Result<()> {
-
-        let mut ticker = tokio::time::interval(
-            tokio::time::Duration::from_secs(self.cfg.liquidator.frequency)
-        );
+        let mut ticker = tokio::time::interval(tokio::time::Duration::from_secs(
+            self.cfg.liquidator.frequency,
+        ));
         loop {
             tokio::select! {
                 _ = ticker.tick() => {

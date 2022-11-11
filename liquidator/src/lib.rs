@@ -4,10 +4,10 @@
 
 use tulipv2_sdk_common::math::{decimal::Decimal, uint::U192};
 
+pub mod awaitgroup;
 pub mod instructions;
 pub mod refresher;
 pub mod simple;
-pub mod awaitgroup;
 
 /// the minimum ltv used as the threshold at which liquidation occurs
 pub const MIN_LTV: Decimal = Decimal(U192([600000000000000000, 0, 0]));

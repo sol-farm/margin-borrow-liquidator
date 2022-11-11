@@ -69,7 +69,8 @@ impl LiquidatorDb {
             .sorted_unstable_by(crate::utils::cmp_ltvs)
             .collect::<Vec<_>>();
         if let Some(min_ltv) = min_ltv {
-            Ok(iter.into_iter()
+            Ok(iter
+                .into_iter()
                 .filter(|obligation| obligation.ltv.ge(&min_ltv))
                 .collect::<Vec<_>>())
         } else {
@@ -166,7 +167,6 @@ mod test {
             // test that the obligations are sorted
             assert!(got_obligations[0].ltv < got_obligations[got_obligations.len() - 1].ltv);
 
-
             let got_obligations = db.list_obligations(Some(85.1)).unwrap();
             assert!(got_obligations.len() == 500);
             assert!(got_obligations[0].ltv < got_obligations[got_obligations.len() - 1].ltv);
@@ -175,15 +175,20 @@ mod test {
             assert!(got_obligations.len() > 0 && got_obligations.len() <= 500);
             assert!(got_obligations[0].ltv < got_obligations[got_obligations.len() - 1].ltv);
 
-            let obligations_to_delete = got_obligations.iter().map(|obligation| obligation.account).collect::<Vec<_>>();
+            let obligations_to_delete = got_obligations
+                .iter()
+                .map(|obligation| obligation.account)
+                .collect::<Vec<_>>();
             let count = obligations_to_delete.len() / 2;
-            let obligations_to_delete = obligations_to_delete.into_iter().take(count).collect::<Vec<_>>();
+            let obligations_to_delete = obligations_to_delete
+                .into_iter()
+                .take(count)
+                .collect::<Vec<_>>();
             println!("deleting {}", obligations_to_delete.len());
             db.delete_obligations(&&obligations_to_delete[..]).unwrap();
 
             let got_obligations = db.list_obligations(None).unwrap();
             assert!(got_obligations.len() > 0 && got_obligations.len() < NUM_OBLIGATIONS);
-
         }
         std::fs::remove_dir_all("test_database_tmp.db".to_string()).unwrap();
     }

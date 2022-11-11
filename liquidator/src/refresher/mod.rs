@@ -2,7 +2,8 @@
 //! have their ltv values periodically refreshed
 use std::sync::Arc;
 pub mod refresh;
-use anyhow::{Result};
+use anyhow::Result;
+use bonerjams_db::DbBatch;
 use chrono::Utc;
 use config::Configuration;
 use crossbeam::select;
@@ -10,10 +11,9 @@ use crossbeam_channel::tick;
 use db::LiquidatorDb;
 use diesel::r2d2;
 use diesel::PgConnection;
-use log::{error};
-use rayon::ThreadPoolBuilder;
 use futures_util::FutureExt;
-use bonerjams_db::DbBatch;
+use log::error;
+use rayon::ThreadPoolBuilder;
 use solana_client::rpc_client::RpcClient;
 
 use std::str::FromStr;
@@ -36,8 +36,13 @@ impl Refresher {
             rpc: Arc::new(rpc),
         }))
     }
-    pub async fn start(self: &Arc<Self>, _exit_chan: crossbeam_channel::Receiver<bool>) -> Result<()> {
-        let mut ticker = tokio::time::interval(tokio::time::Duration::from_secs(self.cfg.refresher.frequency));
+    pub async fn start(
+        self: &Arc<Self>,
+        mut exit_chan: tokio::sync::oneshot::Receiver<bool>,
+    ) -> Result<()> {
+        let mut ticker = tokio::time::interval(tokio::time::Duration::from_secs(
+            self.cfg.refresher.frequency,
+        ));
         loop {
             tokio::select! {
                 _ = ticker.tick() => {
@@ -105,6 +110,10 @@ impl Refresher {
                             log::error!("failed to list obligations {:#?}", err);
                         }
                     }
+                }
+                _ = &mut exit_chan => {
+                    log::warn!("receive exit signal");
+                    return Ok(());
                 }
             }
         }

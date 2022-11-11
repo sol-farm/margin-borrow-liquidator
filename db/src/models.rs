@@ -3,12 +3,11 @@
 #![allow(unused)]
 #![allow(clippy::all)]
 
-
 use bonerjams_db::types::DbKey;
-use solana_sdk::pubkey::Pubkey;
 use chrono::offset::Utc;
 use chrono::DateTime;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
+use solana_sdk::pubkey::Pubkey;
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Obligation {
     pub ltv: f64,
@@ -24,8 +23,6 @@ pub struct PriceFeed {
     pub price: f64,
     pub scraped_at: DateTime<Utc>,
 }
-
-
 
 impl DbKey for Obligation {
     fn key(&self) -> anyhow::Result<Vec<u8>> {

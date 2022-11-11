@@ -1,7 +1,7 @@
 use crate::Configuration;
+use serde::{Deserialize, Serialize};
 use solana_client::rpc_client::RpcClient;
 use solana_sdk::{commitment_config::CommitmentConfig, signature::read_keypair_file};
-use serde::{Deserialize, Serialize};
 use solana_sdk::{pubkey::Pubkey, signer::Signer};
 use std::{rc::Rc, sync::Arc};
 

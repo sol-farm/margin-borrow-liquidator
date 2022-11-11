@@ -10,10 +10,10 @@ pub mod refresher;
 pub mod rpcs;
 pub mod telemetry;
 pub mod utils;
-use solana_sdk::signer::keypair::read_keypair_file;
 use anchor_lang::prelude::Pubkey;
 use liquidator::Liquidator;
 use refresher::Refresher;
+use solana_sdk::signer::keypair::read_keypair_file;
 use telemetry::Telemetry;
 
 use crate::{
@@ -28,7 +28,7 @@ use serde::{Deserialize, Serialize};
 use simplelog::*;
 use solana_clap_utils::keypair::signer_from_path;
 use solana_remote_wallet::remote_wallet;
-use solana_sdk::{signer::Signer, signature::Keypair};
+use solana_sdk::{signature::Keypair, signer::Signer};
 use std::fs;
 use std::{fs::File, str::FromStr};
 
@@ -207,17 +207,23 @@ impl Default for Configuration {
                 enabled: true,
                 agent_endpoint: String::from("http://localhost:8126"),
             },
-            sled_db: bonerjams_config::Configuration { 
+            sled_db: bonerjams_config::Configuration {
                 db: bonerjams_config::database::DbOpts {
                     path: "liquidator.db".to_string(),
                     ..Default::default()
                 },
                 ..Default::default()
-             },
-             key_path: "".to_string(),
-             liquidator: Liquidator { frequency: 100, max_concurrency: 32, min_ltv: 85.0 },
-             refresher: Refresher { frequency: 100, max_concurrency: 32}
-
+            },
+            key_path: "".to_string(),
+            liquidator: Liquidator {
+                frequency: 100,
+                max_concurrency: 32,
+                min_ltv: 85.0,
+            },
+            refresher: Refresher {
+                frequency: 100,
+                max_concurrency: 32,
+            },
         }
     }
 }
