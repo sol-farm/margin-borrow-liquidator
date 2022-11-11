@@ -67,7 +67,6 @@
 //! # });
 //! # }
 //! ```
-#![deny(missing_debug_implementations, rust_2018_idioms)]
 use std::fmt;
 use std::future::Future;
 use std::pin::Pin;
