@@ -1,0 +1,41 @@
+[package]
+name = "config"
+version = "0.1.0"
+edition = "2021"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_yaml = "0.8"
+thiserror = "1.0.25"
+anyhow = "1.0.41"
+simplelog = "0.10.0"
+log = "0.4.14"
+serde_json = "1.0.64"
+solana-sdk = "1.13"
+solana-client = "1.13"
+anchor-lang = {git = "https://github.com/coral-xyz/anchor.git", rev = "7a0a37e0f8729f03e377acac18e3cf68934a294b"}
+remain = "0.2"
+solana-remote-wallet = "1.13"
+solana-clap-utils = "1.13"
+rpassword = "4"
+clap = "2.33.3"
+tiny-bip39 = "0.8.2" 
+static-pubkey = "1.0.2"
+rand = "0.7.3"
+serum_dex = { git = "https://github.com/project-serum/serum-dex", rev = "1f6d5867019e242a470deed79cddca0d1f15e0a3", features = ["no-entrypoint"] }
+bytemuck = "1.7.2"
+reqwest = { version = "0.11", features = ["json", "blocking"] }
+tokio = { version = "1.8.0", features = ["rt-multi-thread", "macros"] } 
+spl-token = "3.2.0"
+opentelemetry-datadog = {version = "0.5.0", features = ["reqwest-client"]}
+opentelemetry = {version =  "0.17", features = ["rt-tokio"]}
+itertools = "0.10.3"
+solana-account-decoder = "1.13"
+rpc_utils = {path = "../rpc_utils"}
+spl-associated-token-account = "1.0.3"
+arrform = {git = "https://github.com/sol-farm/arrform.git", rev = "fdbb0cfe18eadbff99cc8cd63f1b5a43df70e665"}
+csv = "1.1.6"
+tulipv2-sdk-common = "0.9.5"
+bonerjams-db = "0.0.2"
+bonerjams-config = "0.0.2"

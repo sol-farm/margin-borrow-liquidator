@@ -1,0 +1,38 @@
+[package]
+name = "cli"
+version = "0.1.0"
+edition = "2021"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+analytics = {path = "../analytics"}
+config = {path = "../config" }
+clap = "2.33.3"
+signal-hook = "0.3.9"
+log = "0.4.14"
+jemallocator = "0.3.2"
+thiserror = "1.0.25"
+anyhow = "1.0.41"
+simplelog = "0.10.0"
+tokio = { version = "1.8.0", features = ["rt-multi-thread", "macros"] } 
+db = { path = "../db" }
+solana-remote-wallet = "1.13"
+solana-clap-utils = "1.13"
+anchor-lang = {git = "https://github.com/coral-xyz/anchor.git", rev = "7a0a37e0f8729f03e377acac18e3cf68934a294b"}
+crossbeam = "0.8"
+crossbeam-utils = "0.8"
+crossbeam-channel = "0.5"
+channels = {path = "../channels"}
+hyper = { version = "0.14", features = ["full"] }
+tower-http = {version = "0.1.1", features = ["full", "trace"]}
+axum = {version = "0.3.0", features = ["headers", "http2"]}
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0.64"
+hyper-native-tls = "0.3.0"
+derivative = {git = "https://github.com/sol-farm/rust-derivative.git", rev = "ff66e36f57d14c0a910e77d6e7f4d3dae307de7e"}
+git-version = {git = "https://github.com/fusion-engineering/rust-git-version.git", rev = "4d8786e659919d5baa208a6ebc6a063b15b157a4"}
+solana-account-decoder = "1.13"
+solana-transaction-status = "1.13"
+dirs = "4.0.0"
+pprof = { version = "0.6.2", features = ["flamegraph"] }
+liquidator = {path ="../liquidator"}
