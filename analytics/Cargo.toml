@@ -32,7 +32,6 @@ validator = { version = "0.14", features = ["derive"] }
 axum-debug = "0.1.0"
 tracing = "0.1"
 tracing-subscriber = "0.2"
-channels = { path = "../channels"}
 dashmap = "5.1.0"
 arrform = {git = "https://github.com/sol-farm/arrform.git", rev = "fdbb0cfe18eadbff99cc8cd63f1b5a43df70e665"}
 reqwest = { version = "0.11", features = ["json", "blocking"]}

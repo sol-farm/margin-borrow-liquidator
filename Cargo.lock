@@ -112,7 +112,6 @@ dependencies = [
  "arrform",
  "axum 0.3.4",
  "axum-debug",
- "channels",
  "chrono",
  "config",
  "crossbeam",
@@ -1086,15 +1085,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
-name = "channels"
-version = "0.1.0"
-dependencies = [
- "crossbeam",
- "crossbeam-channel",
- "crossbeam-utils",
-]
-
-[[package]]
 name = "chrono"
 version = "0.4.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1150,7 +1140,6 @@ dependencies = [
  "anchor-lang 0.25.0",
  "anyhow",
  "axum 0.3.4",
- "channels",
  "clap",
  "config",
  "crossbeam",
@@ -2737,7 +2726,6 @@ dependencies = [
  "arrform",
  "bonerjams-db",
  "bytemuck",
- "channels",
  "chrono",
  "config",
  "crossbeam",
@@ -2748,7 +2736,6 @@ dependencies = [
  "diesel",
  "futures-util",
  "log 0.4.14",
- "rayon",
  "serde",
  "serde_json",
  "serde_yaml 0.8.23",

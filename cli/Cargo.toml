@@ -22,7 +22,6 @@ anchor-lang = {git = "https://github.com/coral-xyz/anchor.git", rev = "7a0a37e0f
 crossbeam = "0.8"
 crossbeam-utils = "0.8"
 crossbeam-channel = "0.5"
-channels = {path = "../channels"}
 hyper = { version = "0.14", features = ["full"] }
 tower-http = {version = "0.1.1", features = ["full", "trace"]}
 axum = {version = "0.3.0", features = ["headers", "http2"]}
