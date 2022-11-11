@@ -28,28 +28,12 @@ async fn main() -> Result<()> {
         .help("if present skip preflight checks")
         .required(false);
 
-    let ltv_filter_mode = Arg::with_name("ltv-filter-mode")
-    .short("lfm")
-    .help("the filter mode to use: ge, le, gt, lt")
-    .long_help("specifies whether or not to get greater/less than or equal to, greater than, or less than filtering of obligations based on their ltv")
-    .required(true)
-    .takes_value(true)
-    .value_name("MODE");
-
-    let ltv_filter_value = Arg::with_name("ltv-filter-value")
-        .short("lfv")
-        .help("the ltv value to use for filtering, where 1.0 is 100% and 0.6 is 60%")
-        .required(true)
-        .takes_value(true)
-        .value_name("LTV");
-
     let matches = App::new("tulip-cli")
         .version("0.0.1")
         .author("TULIP Protocol Developers <contact@tulip.garden>")
         .long_version(format!("cli_git_ver {}", GIT_VERSION).as_str())
         .arg(
             Arg::with_name("config")
-                .short("c")
                 .long("config")
                 .value_name("FILE")
                 .help("sets the config file")
@@ -113,9 +97,7 @@ async fn main() -> Result<()> {
             .about("liquidator bot management commands")
             .subcommands(vec![
                 SubCommand::with_name("start-simple")
-                .about("starts the simple liquidator bot")
-                .arg(ltv_filter_mode)
-                .arg(ltv_filter_value),
+                .about("starts the simple liquidator bot"),
                 SubCommand::with_name("start-refresher")
                 .about("starts the refresher service")
                 .long_about("starts the refresher service, which updates the ltv of obligations stored in the database")

@@ -3,7 +3,6 @@
 #![allow(non_upper_case_globals)]
 
 pub mod analytics;
-pub mod database;
 pub mod liquidator;
 pub mod programs;
 pub mod refresher;
@@ -18,7 +17,6 @@ use telemetry::Telemetry;
 
 use crate::{
     analytics::Analytics,
-    database::Database,
     programs::Programs,
     rpcs::{RPCEndpoint, RPCs},
 };
@@ -37,7 +35,6 @@ use std::{fs::File, str::FromStr};
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Configuration {
     pub analytics: Analytics,
-    pub database: Database,
     pub debug_log: bool,
     pub key_path: String,
     pub liquidator: Liquidator,
@@ -61,7 +58,6 @@ impl Configuration {
     pub fn sanitize(&mut self) {
         self.key_path = "".to_string();
         self.log_file = "".to_string();
-        self.database.conn_url = "".to_string();
         self.rpc_endpoints.primary_endpoint.http_url = "".to_string();
         self.rpc_endpoints.primary_endpoint.ws_url = "".to_string();
         self.rpc_endpoints.failover_endpoints = vec![];
@@ -96,27 +92,6 @@ impl Configuration {
     pub fn payer(&self) -> Keypair {
         read_keypair_file(self.key_path.clone()).expect("failed to read keypair file")
     }
-    /// like `payer` but returns a signer instead and can be used with key files or hardware wallets
-    pub fn payer_signer(&self, matches: Option<&clap::ArgMatches>) -> Result<Box<dyn Signer>> {
-        if self.key_path.starts_with("usb://ledger") {
-            self.usb_payer(matches.unwrap())
-        } else {
-            Ok(Box::new(self.payer()))
-        }
-    }
-    pub fn usb_payer(&self, matches: &clap::ArgMatches) -> Result<Box<dyn Signer>> {
-        let mut wallet_manager = remote_wallet::maybe_wallet_manager().unwrap();
-        match signer_from_path(matches, &self.key_path, &self.key_path, &mut wallet_manager) {
-            Err(err) => {
-                return Err(anyhow!(
-                    "encountered error retrieving signer from path {:#?}",
-                    err
-                ));
-            }
-            Ok(signer) => Ok(signer),
-        }
-    }
-
     /// if file_log is true, log to both file and stdout
     /// otherwise just log to stdout
     pub fn init_log(&self, file_log: bool) -> Result<()> {
@@ -194,11 +169,6 @@ impl Default for Configuration {
                     ws_url: "ws://solana-api.projectserum.com".to_string(),
                 }],
             },
-            database: Database {
-                analytics_pool_size: 2,
-                conn_url: "postgres://postgres:password123@localhost/liquidator".to_string(),
-                pool_size: 2,
-            },
             programs: Programs::default(),
             log_file: "".to_string(),
             analytics: Analytics::default(),
@@ -237,7 +207,6 @@ mod tests {
             key_path: "420".to_string(),
             ..Default::default()
         };
-        config.database.conn_url = "420".to_string();
         config.rpc_endpoints.primary_endpoint.http_url = "420".to_string();
         config.rpc_endpoints.primary_endpoint.ws_url = "420".to_string();
         config.rpc_endpoints.failover_endpoints.push(RPCEndpoint {
@@ -246,7 +215,6 @@ mod tests {
         });
         config.sanitize();
         assert!(config.key_path.is_empty());
-        assert!(config.database.conn_url.is_empty());
         assert!(config.rpc_endpoints.primary_endpoint.http_url.is_empty());
         assert!(config.rpc_endpoints.primary_endpoint.ws_url.is_empty());
         assert!(config.rpc_endpoints.failover_endpoints.is_empty());
