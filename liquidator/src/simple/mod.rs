@@ -4,13 +4,9 @@ pub mod handler;
 
 use anyhow::{anyhow, Result};
 use config::Configuration;
-use crossbeam::select;
-use crossbeam_channel::tick;
-use diesel::r2d2;
-use diesel::PgConnection;
-use log::{error, info, warn};
 
-use rayon::ThreadPoolBuilder;
+use log::{error, info};
+
 use solana_account_decoder::UiAccountEncoding;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
@@ -53,7 +49,7 @@ impl SimpleLiquidator {
                         Ok(obligations) => {
                             obligations.into_iter().for_each(|obligation| {
                                 let service = self.clone();
-                                let obligation = obligation.clone();
+                                let obligation = obligation;
                                 tokio::task::spawn(async move {
                                     match service.handle_liquidation_check(&obligation).await {
                                         Ok(_) => (),

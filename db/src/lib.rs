@@ -138,7 +138,7 @@ mod test {
             let mut cfg = Configuration::default();
             cfg.sled_db.db.path = "test_database_tmp.db".to_string();
 
-            let db = LiquidatorDb::new(cfg.clone()).unwrap();
+            let db = LiquidatorDb::new(cfg).unwrap();
 
             const NUM_FEEDS: usize = 5;
             const NUM_OBLIGATIONS: usize = 1000;
@@ -172,7 +172,7 @@ mod test {
             assert!(got_obligations[0].ltv < got_obligations[got_obligations.len() - 1].ltv);
 
             let got_obligations = db.list_obligations(Some(95.0)).unwrap();
-            assert!(got_obligations.len() > 0 && got_obligations.len() <= 500);
+            assert!(!got_obligations.is_empty() && got_obligations.len() <= 500);
             assert!(got_obligations[0].ltv < got_obligations[got_obligations.len() - 1].ltv);
 
             let obligations_to_delete = got_obligations
@@ -185,12 +185,12 @@ mod test {
                 .take(count)
                 .collect::<Vec<_>>();
             println!("deleting {}", obligations_to_delete.len());
-            db.delete_obligations(&&obligations_to_delete[..]).unwrap();
+            db.delete_obligations(&obligations_to_delete[..]).unwrap();
 
             let got_obligations = db.list_obligations(None).unwrap();
-            assert!(got_obligations.len() > 0 && got_obligations.len() < NUM_OBLIGATIONS);
+            assert!(!got_obligations.is_empty() && got_obligations.len() < NUM_OBLIGATIONS);
         }
-        std::fs::remove_dir_all("test_database_tmp.db".to_string()).unwrap();
+        std::fs::remove_dir_all("test_database_tmp.db").unwrap();
     }
 
     pub fn new_price_feed() -> PriceFeed {

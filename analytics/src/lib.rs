@@ -1,15 +1,12 @@
 use anyhow::Result;
 use chrono::Utc;
 use config::Configuration;
-use crossbeam::{select, sync::WaitGroup};
+use crossbeam::sync::WaitGroup;
 use crossbeam_channel::tick;
 
 use db::LiquidatorDb;
-use diesel::{
-    r2d2::{ConnectionManager, Pool},
-    PgConnection,
-};
-use log::{error, info, warn};
+
+use log::info;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use std::sync::Arc;
 
@@ -35,7 +32,7 @@ impl Service {
     ) -> Result<()> {
         let price_feed_map = Arc::new(self.config.analytics.price_account_map());
         let reserve_account_map = Arc::new(self.config.analytics.reserve_map());
-        let ticker = tick(std::time::Duration::from_secs(
+        let _ticker = tick(std::time::Duration::from_secs(
             self.config.analytics.scrape_interval,
         ));
         let mut ticker = tokio::time::interval(tokio::time::Duration::from_secs(

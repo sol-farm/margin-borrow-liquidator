@@ -3,17 +3,13 @@
 use std::sync::Arc;
 pub mod refresh;
 use anyhow::Result;
-use bonerjams_db::DbBatch;
-use chrono::Utc;
+
 use config::Configuration;
-use crossbeam::select;
-use crossbeam_channel::tick;
+
 use db::LiquidatorDb;
-use diesel::r2d2;
-use diesel::PgConnection;
-use futures_util::FutureExt;
+
 use log::error;
-use rayon::ThreadPoolBuilder;
+
 use solana_client::nonblocking::rpc_client::RpcClient;
 
 use std::str::FromStr;

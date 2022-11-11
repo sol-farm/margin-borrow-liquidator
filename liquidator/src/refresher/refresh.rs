@@ -7,7 +7,7 @@ use solana_account_decoder::UiAccountEncoding;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::program_pack::Pack;
 use solana_sdk::pubkey::Pubkey;
-use std::str::FromStr;
+
 use std::{collections::HashMap, sync::Arc};
 use tulipv2_sdk_common::lending::{
     lending_obligation::{pseudo_refresh_lending_obligation, LendingObligation},

@@ -2,20 +2,11 @@ extern crate hyper_native_tls;
 
 use anyhow::{anyhow, Result};
 
-use channels::broadcast::UnboundedBroadcast;
 use config::Configuration;
 
 use log::error;
 
-use signal_hook::{
-    consts::{SIGINT, SIGQUIT, SIGTERM},
-    iterator::Signals,
-};
-use std::sync::Arc;
-use tokio::{
-    signal::unix::{signal, SignalKind},
-    task,
-};
+use tokio::signal::unix::{signal, SignalKind};
 
 pub async fn start_scraper_service(
     _matches: &clap::ArgMatches<'_>,

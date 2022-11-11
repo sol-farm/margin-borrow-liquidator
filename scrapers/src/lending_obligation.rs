@@ -1,8 +1,6 @@
 use anyhow::{anyhow, Result};
-use chrono::{DateTime, Utc};
+
 use config::Configuration;
-use diesel::PgConnection;
-use log::error;
 
 use solana_account_decoder::UiAccountEncoding;
 use solana_client::nonblocking::rpc_client::RpcClient;
@@ -12,7 +10,7 @@ use solana_sdk::account::Account;
 use solana_sdk::program_pack::Pack;
 use solana_sdk::pubkey::Pubkey;
 use solana_sdk::system_program;
-use std::borrow::Borrow;
+
 use std::collections::HashMap;
 use std::str::FromStr;
 use std::sync::Arc;

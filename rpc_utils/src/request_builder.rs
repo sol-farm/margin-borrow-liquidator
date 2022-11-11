@@ -138,7 +138,7 @@ impl<'a> RequestBuilder<'a> {
             self.instructions.clone()
         };
         let blockhash = self.rpc_client.get_latest_blockhash()?;
-        let mut signers = vec![&*self.payer];
+        let mut signers = vec![self.payer];
         for signer in self.signers.iter() {
             signers.push(&**signer);
         }

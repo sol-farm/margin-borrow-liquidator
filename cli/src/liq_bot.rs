@@ -1,19 +1,9 @@
 use super::*;
 use crate::helpers::get_config;
-use signal_hook::{
-    consts::{SIGINT, SIGQUIT, SIGTERM},
-    iterator::Signals,
-};
 
-use channels::broadcast::UnboundedBroadcast;
+use tokio::signal::unix::{signal, SignalKind};
 
-use std::sync::Arc;
-use tokio::{
-    signal::unix::{signal, SignalKind},
-    task,
-};
-
-pub async fn start_simple(matches: &clap::ArgMatches<'_>, config_file_path: String) -> Result<()> {
+pub async fn start_simple(_matches: &clap::ArgMatches<'_>, config_file_path: String) -> Result<()> {
     let cfg = get_config(&config_file_path)?;
     let simple_liquidator = liquidator::simple::SimpleLiquidator::new(cfg)?;
     let (sender, receiver) = tokio::sync::oneshot::channel();

@@ -1,7 +1,7 @@
 use crate::models::*;
 use chrono::{DateTime, Utc};
 use once_cell::sync::Lazy;
-use solana_sdk::{system_instruction, system_program};
+use solana_sdk::system_program;
 
 /// this is really the time at which this value is first accessed
 /// it's used as an optimization for the ::Default handlers defined below
